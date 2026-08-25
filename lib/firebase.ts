@@ -1,4 +1,4 @@
-import {initializeApp} from "firebase/app";
+import {getApp, getApps, initializeApp} from "firebase/app";
 import {getAnalytics} from "firebase/analytics";
 import {Auth, getAuth, User} from 'firebase/auth';
 import {
@@ -34,18 +34,23 @@ import {Timestamp} from "@firebase/firestore";
 
 // https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: "budget-tracker-bcf59.firebaseapp.com",
-    projectId: "budget-tracker-bcf59",
-    storageBucket: "budget-tracker-bcf59.appspot.com",
-    messagingSenderId: "1083693993969",
-    appId: "1:1083693993969:web:4a86f787868c4a38ed3e50",
-    measurementId: "G-RE7VNMNYER"
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
+
+const missingFirebaseConfig = Object.entries(firebaseConfig)
+    .filter(([key, value]) => key !== "measurementId" && !value)
+    .map(([key]) => key);
+
+if (missingFirebaseConfig.length > 0) {
+    throw new Error(`Missing Firebase configuration: ${missingFirebaseConfig.join(", ")}`);
+}
 
 // Initialize Firebase
 
@@ -65,13 +70,22 @@ const defaultCategoriesAndIcons: {[category: string]: string} = {
 }
 
 if (typeof window !== 'undefined') {
-    app = initializeApp(firebaseConfig);
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
     analytics = getAnalytics(app);
 }
 
 export {app, auth, analytics};
 
+export async function ensureUserInDatabase(user: User): Promise<void> {
+    const db = getFirestore();
+    const userRef = doc(db, usersDirectory, user.uid);
+    const userSnapshot = await getDoc(userRef);
+
+    if (!userSnapshot.exists()) {
+        await saveUserToDatabase(user);
+    }
+}
 
 export async function saveUserToDatabase(user: User, userCategories: CategoryClass[] | null = null): Promise<void> {
     const db = getFirestore();
@@ -117,10 +131,6 @@ export async function saveUserToDatabase(user: User, userCategories: CategoryCla
     // this will need to happen for each new month >> write into addExpense (if currMonth doc doesn't exist, create it)
     await createCurrentMonth(db, user, defaultCategoriesAndIcons);
     
-    //// create goals collection and goals summary
-    const goalsRef = collection(db, usersDirectory, uid, "Goals");
-    const goalSummary = doc(goalsRef, "summary")
-    await setDoc(goalSummary, {numGoals: 0})
 }
 
 
