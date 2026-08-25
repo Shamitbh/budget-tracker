@@ -1,206 +1,220 @@
 "use client";
-import React, {useState} from "react";
-import {useAuth} from "@/app/context";
-import {Category, CategoryClass, MonthSummary} from "@/lib/Interfaces";
-import { useCategories, addCategory, useSummary } from "@/lib/firebase";
 
-import {Button, Modal, NumberInput, TextInput,} from "@mantine/core";
-import {useDisclosure} from "@mantine/hooks";
+import React, {useEffect, useState} from "react";
+import {Button, Group, Modal, NumberInput, Text, TextInput, Title, useMantineTheme} from "@mantine/core";
 import {useForm} from "@mantine/form";
-import {icons} from "@/lib/icons";
 import {FiPlus} from "react-icons/fi";
+import toast from "react-hot-toast";
 
-import ComponentFrameCenter from "@/components/layouts/ComponentFrameCenter";
-import LoadingAtAGlance from "@/components/layouts/LoadingAtAGlance";
+import {useAuth} from "@/app/context";
+import Loading from "@/app/loading";
 import BudgetCardAdd from "@/components/BudgetCardAdd";
+import IconPickerPopover from "@/components/IconPickerPopover";
+import {addCategory, deleteCategory, updateCategory, useCategories, useSummary} from "@/lib/firebase";
+import {Category, CategoryClass} from "@/lib/Interfaces";
+
+const DEFAULT_ICON = "dashboard";
 
 export default function Budgets() {
-    const { user, loading } = useAuth();
-    const [opened, { open, close }] = useDisclosure(false);
-    const icon = icons.find((icon) => icon.name === "dashboard");
-    const [selectedIcon, setSelectedIcon] = useState(icon);
-
-    const budgets: Category[] | null =
-        useCategories(user);
-
-    const summary: MonthSummary | undefined = useSummary(user);
-    const form = useForm({
-        initialValues: {
-            categoryName: "",
-            budgetAmount: 0,
-            spent: 0,
-            icon: "",
-        },
-    });
+    const {user, loading} = useAuth();
+    const {colorScheme} = useMantineTheme();
+    const categories = useCategories(user);
+    const summary = useSummary(user);
+    const [formOpened, setFormOpened] = useState(false);
+    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+    const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <Loading/>;
     }
 
-    const handleIconSelect = (iconId: string) => {
-        const selectedIcon = icons.find((icon) => icon.name === iconId);
-        setSelectedIcon(selectedIcon);
-    };
-
-    // TODO: Figure out how to get this connected to the backend properly
-    const handleSaveNewCategoryBudget = () => {
-        // console.log("Save new category/budget");
-        // const categoryBudget: CategoryBudget = {
-        //     category: "Brand New Category",
-        //     budgetAmount: 500,
-        //     spent: 0,
-        //     icon: selectedIcon?.name || "dashboard",
-        // };
-        // console.log("category budget", categoryBudget);
-        // addBudget(user, categoryBudget, false);
-        // close();
-    };
-
-    interface AtAGlanceProps {
-        budgets: Category[] | null;
-        summary: MonthSummary | undefined;
+    if (!user) {
+        return <Text p="xl">Please log in to manage budgets.</Text>;
     }
 
-    const AtAGlance = ({ budgets, summary }: AtAGlanceProps) => {
-        return (
-            <>
-                <ComponentFrameCenter
-                    PRIMARY_COL_HEIGHT={"600px"}
-                    title={"Add New Budgets/Categories"}
-                >
-                    <div className={"grid md:grid-cols-2 sm:grid-cols-1 gap-5"}>
-                        {budgets ? (
-                            budgets.map((category: Category) => {
-                                return (
-                                    <BudgetCardAdd
-                                        key={category.categoryID}
-                                        id={category.categoryID}
-                                        budgetName={category.name}
-                                        budgetAmount={category.amount}
-                                        spent={summary?.categoryTotals[category.name] || 0}
-                                        iconName={category.icon}
-                                    />
-                                );
-                            })
-                        ) : (
-                            <LoadingAtAGlance />
-                        )}
-                    </div>
-                </ComponentFrameCenter>
-            </>
-        );
+    const openAddForm = () => {
+        setEditingCategory(null);
+        setFormOpened(true);
+    };
+
+    const openEditForm = (category: Category) => {
+        setEditingCategory(category);
+        setFormOpened(true);
+    };
+
+    const handleDelete = async () => {
+        if (!categoryToDelete) {
+            return;
+        }
+
+        try {
+            await deleteCategory(user, categoryToDelete.categoryID);
+            toast.success(`${categoryToDelete.name} removed`);
+            setCategoryToDelete(null);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Unable to remove category");
+        }
     };
 
     return (
-        <>
-            <AtAGlance
-                // userData={userData}
-                // user={user}
-                budgets={budgets}
-                summary={summary}
+        <div className={`p-6 ${colorScheme === "dark" ? "text-white" : "text-slate-900"}`}>
+            <Group position="apart" align="flex-start" mb="xl">
+                <div>
+                    <Title order={1}>Budgets</Title>
+                    <Text color="dimmed">Set a monthly spending target for each category.</Text>
+                </div>
+                <Button leftIcon={<FiPlus/>} onClick={openAddForm}>
+                    Add category
+                </Button>
+            </Group>
+
+            {categories === null ? (
+                <Loading/>
+            ) : categories.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-10 text-center">
+                    <Title order={3}>No budget categories yet</Title>
+                    <Text color="dimmed" mt="xs" mb="md">Add a category to start planning your spending.</Text>
+                    <Button leftIcon={<FiPlus/>} onClick={openAddForm}>Add your first category</Button>
+                </div>
+            ) : (
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {categories.map((category) => (
+                        <BudgetCardAdd
+                            key={category.categoryID}
+                            category={category}
+                            spent={summary?.categoryTotals[category.name] ?? 0}
+                            onEdit={() => openEditForm(category)}
+                            onDelete={() => setCategoryToDelete(category)}
+                        />
+                    ))}
+                </div>
+            )}
+
+            <CategoryFormModal
+                category={editingCategory}
+                opened={formOpened}
+                onClose={() => setFormOpened(false)}
+                onSubmit={async (values) => {
+                    if (editingCategory) {
+                        await updateCategory(user, editingCategory.categoryID, {
+                            amount: values.amount,
+                            icon: values.icon,
+                        });
+                        toast.success(`${editingCategory.name} updated`);
+                    } else {
+                        const category = new CategoryClass(values.name, values.icon, values.amount);
+                        await addCategory(user, category);
+                        toast.success(`${values.name.trim()} added`);
+                    }
+                    setFormOpened(false);
+                }}
             />
-            {/* <ul className={"p-3"}>
-                {categoryObject.map((category: CategoryBudget) => (
-                    <li className={"my-3"} key={category.category}>
-                        <BudgetByCategory category_name={category.category} />
-                    </li>
-                ))}
-            </ul> */}
-
-            <Button
-                leftIcon={<FiPlus />}
-                variant={"outline"}
-                color={"dark"}
-                compact
-                onClick={open}
-            >
-                New Category
-            </Button>
-
-            <Button variant={"outline"}>Save all Changes</Button>
 
             <Modal
-                size={"lg"}
-                zIndex={2}
-                opened={opened}
-                onClose={close}
-                title="Add New Budget Category"
+                opened={categoryToDelete !== null}
+                onClose={() => setCategoryToDelete(null)}
+                title="Remove budget category?"
                 centered
             >
-                {/* Modal content */}
-                <form
-                    onSubmit={form.onSubmit((values) => {
-                        console.log("Form submitted");
-                        const newCategoryBudget: CategoryClass = new CategoryClass(
-                            values.categoryName,
-                            values.icon ? values.icon : "dashboard",
-                            values.budgetAmount,
-                            false
-                        );
-                        console.log(newCategoryBudget)
-                        // add budget to firebase
-                        // addCategory(user, newCategoryBudget, false);
-
-                        // OLD 
-                        // const newCategoryBudget: CategoryBudget = {
-                        //     name: values.categoryName,
-                        //     amount: values.budgetAmount,
-                        //     spent: 0,
-                        //     icon: values.icon ? values.icon : "dashboard",
-                        // };
-                    })}
-                    style={{
-                        overflow: "visible",
-                    }}
-                    className={"space-y-4"}
-                >
-                    <div className={"flex gap-3 justify-center"}></div>
-
-                    <TextInput
-                        withAsterisk
-                        label="categoryName"
-                        placeholder="New Category Name"
-                        {...form.getInputProps("categoryName")}
-                    />
-
-                    <NumberInput
-                        withAsterisk
-                        label="budgetAmount"
-                        placeholder="New Budget Amount"
-                        hideControls
-                        {...form.getInputProps("budgetAmount")}
-                    />
-
-                    <Button variant={"outline"} type="submit" onClick={close}>
-                        Submit
-                    </Button>
-                </form>
-                {/* <Text>
-                    This allows you to create a new budget category and assign it a budget
-                    for the month.
-                </Text>
-
                 <Text>
-                    Category Name:
-                    <Input />
+                    Remove <strong>{categoryToDelete?.name}</strong> from your budgets? Existing expenses will be preserved.
                 </Text>
-                <Spacer y={1} />
-                <Text>Select an Icon:</Text>
-                <IconPickerPopover></IconPickerPopover>
-                <Text>
-                    Budget Amount:
-                    <Input type="number" placeholder="500" />
-                </Text>
-
-                <Spacer y={1} />
-                <Button
-                    variant={"light"}
-                    color={"cyan"}
-                    onClick={handleSaveNewCategoryBudget}
-                >
-                    Save new Category/Budget
-                </Button> */}
+                <Group position="right" mt="xl">
+                    <Button variant="default" onClick={() => setCategoryToDelete(null)}>Cancel</Button>
+                    <Button color="red" onClick={handleDelete}>Remove category</Button>
+                </Group>
             </Modal>
-        </>
+        </div>
+    );
+}
+
+type CategoryFormValues = {
+    name: string;
+    amount: number;
+    icon: string;
+};
+
+interface CategoryFormModalProps {
+    category: Category | null;
+    opened: boolean;
+    onClose: () => void;
+    onSubmit: (values: CategoryFormValues) => Promise<void>;
+}
+
+function CategoryFormModal({category, opened, onClose, onSubmit}: CategoryFormModalProps) {
+    const [submitting, setSubmitting] = useState(false);
+    const form = useForm<CategoryFormValues>({
+        initialValues: {name: "", amount: 0, icon: DEFAULT_ICON},
+        validate: {
+            name: (value) => value.trim().length > 0 ? null : "Category name is required",
+            amount: (value) => Number.isFinite(value) && value >= 0 ? null : "Budget must be zero or greater",
+        },
+    });
+
+    useEffect(() => {
+        if (opened) {
+            form.setValues({
+                name: category?.name ?? "",
+                amount: category?.amount ?? 0,
+                icon: category?.icon ?? DEFAULT_ICON,
+            });
+            form.clearErrors();
+        }
+    }, [category, opened]);
+
+    const handleSubmit = async (values: CategoryFormValues) => {
+        setSubmitting(true);
+        try {
+            await onSubmit({...values, name: values.name.trim()});
+            form.reset();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Unable to save category");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <Modal
+            opened={opened}
+            onClose={onClose}
+            title={category ? `Edit ${category.name}` : "Add budget category"}
+            centered
+        >
+            <form onSubmit={form.onSubmit(handleSubmit)}>
+                <TextInput
+                    label="Category name"
+                    placeholder="e.g. Entertainment"
+                    disabled={category !== null}
+                    withAsterisk
+                    {...form.getInputProps("name")}
+                />
+                <NumberInput
+                    label="Monthly budget"
+                    description="Enter 0 if you only want to track spending."
+                    min={0}
+                    precision={2}
+                    parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                    formatter={(value) => !Number.isNaN(parseFloat(value)) ? `$ ${value}` : "$ "}
+                    mt="md"
+                    withAsterisk
+                    {...form.getInputProps("amount")}
+                />
+                <div className="mt-4">
+                    <Text size="sm" weight={500} mb={6}>Icon</Text>
+                    <IconPickerPopover
+                        selectedIconName={form.values.icon}
+                        onIconSelect={(icon) => form.setFieldValue("icon", icon)}
+                        zIndex={3}
+                    />
+                </div>
+                <Group position="right" mt="xl">
+                    <Button type="button" variant="default" onClick={onClose}>Cancel</Button>
+                    <Button type="submit" loading={submitting}>
+                        {category ? "Save changes" : "Add category"}
+                    </Button>
+                </Group>
+            </form>
+        </Modal>
     );
 }

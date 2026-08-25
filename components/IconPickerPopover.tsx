@@ -19,6 +19,7 @@ export default function IconPickerPopover({selectedIconName, onIconSelect, categ
         <Popover>
             <PopoverTrigger asChild>
                 <button
+                    type="button"
                     style = {{
                         zIndex: zIndex
                     }}
