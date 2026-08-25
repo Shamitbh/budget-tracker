@@ -47,10 +47,13 @@ export class CategoryClass implements Category {
     }
 
     generateCategoryID(): string {
-        // Get current timestamp
+        const slug = this.name
+            .trim()
+            .toLocaleLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "") || "category";
         const timestamp = Date.now();
-        // Construct the ID
-        return `${this.name}_${timestamp}`;
+        return `${slug}_${timestamp}`;
     }
 
     toJson(): Category {
@@ -216,4 +219,3 @@ export interface CustomButton {
     color: string;
     action: CustomButtonAction;
 }
-
