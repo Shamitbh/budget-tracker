@@ -26,9 +26,8 @@ import {
     sendPasswordResetEmail,
     getAuth
 } from "firebase/auth";
-import {auth, saveUserToDatabase} from "@/lib/firebase";
+import {auth, ensureUserInDatabase, saveUserToDatabase} from "@/lib/firebase";
 import GoogleButton from "react-google-button";
-import {doc, getDoc, getFirestore} from "firebase/firestore";
 import React from "react";
 
 
@@ -41,13 +40,7 @@ export default function LoginMantine(props: PaperProps) {
             const result: UserCredential = await signInWithPopup(auth, provider);
             const user: User = result.user;
             if (user) {
-                const db = getFirestore();
-                const userDocRef = doc(db, "Users", user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                if (!userDocSnap.exists()) {
-                    // The user does not exist in the database, save the user
-                    await saveUserToDatabase(user);
-                }
+                await ensureUserInDatabase(user);
             }
         }
     }
@@ -91,14 +84,13 @@ export default function LoginMantine(props: PaperProps) {
                     console.error("No authenticated user found");
                 }
             } else {
-                await signInWithEmailAndPassword(auth!, email, password).then(() => {
-                    console.log("logged in!");
-                }).catch((error) => {
-                    alert('Error logging in');
-                });
+                const result = await signInWithEmailAndPassword(auth!, email, password);
+                await ensureUserInDatabase(result.user);
+                console.log("logged in!");
             }
         } catch (error) {
             console.warn(error);
+            alert(type === 'login' ? 'Error logging in' : 'Error creating account');
         }
     }
 
