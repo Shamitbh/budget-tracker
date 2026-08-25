@@ -5,13 +5,13 @@ import {icons} from '@/lib/icons';
 import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover"
 
 interface IconPickerPopoverProps {
-    categoryName?: string;
+    categoryID?: string;
     selectedIconName?: string | undefined;
     onIconSelect?: (iconId: string) => void;
     zIndex?: number;
 }
 
-export default function IconPickerPopover({selectedIconName, onIconSelect, categoryName, zIndex = 1}: IconPickerPopoverProps) {
+export default function IconPickerPopover({selectedIconName, onIconSelect, categoryID, zIndex = 1}: IconPickerPopoverProps) {
     const selectedIconFound = icons.find(icon => icon.name === selectedIconName);
     const [selectedIcon, setSelectedIcon] = useState("home")
 
@@ -29,7 +29,7 @@ export default function IconPickerPopover({selectedIconName, onIconSelect, categ
                 </button>
             </PopoverTrigger>
             <PopoverContent>
-                <IconPicker onSelect={onIconSelect ? onIconSelect : setSelectedIcon} categoryName={categoryName ? categoryName : ""}/>
+                <IconPicker onSelect={onIconSelect ? onIconSelect : setSelectedIcon} categoryID={categoryID}/>
             </PopoverContent>
         </Popover>
 

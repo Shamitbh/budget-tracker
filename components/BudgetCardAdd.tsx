@@ -45,6 +45,7 @@ interface BudgetCardProps {
 }
 
 export default function BudgetCardAdd({
+  id,
   budgetName,
   iconName,
 }: BudgetCardProps) {
@@ -69,7 +70,7 @@ export default function BudgetCardAdd({
       <IconPickerPopover
         selectedIconName={icon?.name}
         onIconSelect={handleIconSelect}
-        categoryName={budgetName}
+        categoryID={id}
       />
 
       <Text

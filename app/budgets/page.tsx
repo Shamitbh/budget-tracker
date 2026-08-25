@@ -70,11 +70,11 @@ export default function Budgets() {
                 >
                     <div className={"grid md:grid-cols-2 sm:grid-cols-1 gap-5"}>
                         {budgets ? (
-                            budgets.map((category: Category, idx: number) => {
+                            budgets.map((category: Category) => {
                                 return (
                                     <BudgetCardAdd
-                                        key={idx}
-                                        id={idx.toString()}
+                                        key={category.categoryID}
+                                        id={category.categoryID}
                                         budgetName={category.name}
                                         budgetAmount={category.amount}
                                         spent={summary?.categoryTotals[category.name] || 0}
