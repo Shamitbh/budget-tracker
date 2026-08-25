@@ -175,9 +175,12 @@ export function useCategories(user: User | null): Category[] | null {
             const unsubscribe = onSnapshot(categoryQuery, (snapshot) => {
                 const newCategories: Category[] = [];
                 snapshot.forEach((doc) => {
-                    newCategories.push(doc.data() as Category);
+                    const category = doc.data() as Category;
+                    if (!category.is_deleted) {
+                        newCategories.push(category);
+                    }
                 });
-                setCategories(newCategories);
+                setCategories(newCategories.sort((a, b) => a.name.localeCompare(b.name)));
             });
 
             return () => unsubscribe();
@@ -270,71 +273,63 @@ export async function getMonthSummary(user: User | null, month?: string): Promis
 }
 
 
-export async function addCategory(user: User | null, category: Category, isMonthly: boolean = false) {
-    // TODO update
-    if (user) {
-        const db = getFirestore();
-        const userRef = doc(db, usersDirectory, user.uid);
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) {
-            console.error('User document does not exist:', user.uid);
-            throw new Error('User document not found');
-        }
-        // add budget to user document
-        // const isMonthly = true;
-        const newCategory = new CategoryClass(category.categoryID, category.icon, category.amount, isMonthly);
-        const budgetsRef = collection(userRef, "Budgets");
-        const budgetRef = doc(budgetsRef, category.categoryID);
-        await setDoc(budgetRef, newCategory.toJson());
-
-    } else {
-        throw new Error("User not found")
+export async function addCategory(user: User | null, category: Category): Promise<void> {
+    if (!user) {
+        throw new Error("User not found");
     }
+
+    const name = category.name.trim();
+    if (!name) {
+        throw new Error("Category name is required");
+    }
+    if (!Number.isFinite(category.amount) || category.amount < 0) {
+        throw new Error("Category budget must be a non-negative number");
+    }
+
+    const db = getFirestore();
+    const categoriesRef = collection(db, usersDirectory, user.uid, "Categories");
+    const categoriesSnapshot = await getDocs(categoriesRef);
+    const duplicateExists = categoriesSnapshot.docs.some((categoryDoc) => {
+        const existingCategory = categoryDoc.data() as Category;
+        return !existingCategory.is_deleted && existingCategory.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase();
+    });
+
+    if (duplicateExists) {
+        throw new Error(`A category named "${name}" already exists`);
+    }
+
+    const categoryRef = doc(categoriesRef, category.categoryID);
+    await setDoc(categoryRef, {...category, name, is_deleted: false});
 }
 
-export async function deleteCategory(user: User | null, category: string) {
-    // TODO
-    if (user) {
-        const db = getFirestore();
-        const userRef = doc(db, usersDirectory, user.uid);
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) {
-            console.error('User document does not exist:', user.uid);
-            throw new Error('User document not found');
-        }
-        const userData = userSnap.data();
-        // remove category from user document
-        try {
-            const newCategories = {...userData["categories"]};
-            delete newCategories[category];
-            await updateDoc(userRef, {categories: newCategories});
-        } catch (error) {
-            console.log("Error deleting category: ", error)
-        }
-    } else {
-        throw new Error("User not found")
+type CategoryUpdates = Partial<Pick<Category, "amount" | "icon" | "is_monthly">>;
+
+export async function updateCategory(user: User | null, categoryID: string, updates: CategoryUpdates): Promise<void> {
+    if (!user) {
+        throw new Error("User not found");
     }
+
+    if (updates.amount !== undefined && (!Number.isFinite(updates.amount) || updates.amount < 0)) {
+        throw new Error("Category budget must be a non-negative number");
+    }
+
+    const db = getFirestore();
+    const categoryRef = doc(db, usersDirectory, user.uid, "Categories", categoryID);
+    await updateDoc(categoryRef, updates);
 }
 
-
-export async function changeCategoryIcon(user: User, iconName: string, categoryName: string): Promise<void> {
-    if (user?.uid) {
-        const db: Firestore = getFirestore();
-        try {
-            //    path is: Users -> user.uid -> categories
-            //     categories is a dictionary with key=category name, value=icon name
-            const userRef = doc(db, usersDirectory, user.uid);
-            const userSnap = await getDoc(userRef);
-            if (!userSnap.exists()) {
-                throw new Error('User document not found');
-            }
-            const userData = userSnap.data();
-            const newCategories = {...userData["categories"], [categoryName]: iconName};
-            await updateDoc(userRef, {categories: newCategories});
-        } catch (error) {
-            console.log("Error changing category icon in firebase.tsx: ", error)
-        }
+export async function deleteCategory(user: User | null, categoryID: string): Promise<void> {
+    if (!user) {
+        throw new Error("User not found");
     }
+
+    const db = getFirestore();
+    const categoryRef = doc(db, usersDirectory, user.uid, "Categories", categoryID);
+    await updateDoc(categoryRef, {is_deleted: true});
+}
+
+export async function changeCategoryIcon(user: User, iconName: string, categoryID: string): Promise<void> {
+    await updateCategory(user, categoryID, {icon: iconName});
 }
 
 export function useSummary(user: User | null, month?: number, year?: number): MonthSummary | undefined {
@@ -461,7 +456,10 @@ export async function getUserCategories(user: User | null): Promise<string[]> {
         const categories: string[] = [];
 
         categoriesSnap.forEach((doc) => {
-            categories.push(doc.data().name);
+            const category = doc.data() as Category;
+            if (!category.is_deleted) {
+                categories.push(category.name);
+            }
         })
 
         // if no data from Categories collection, check if user has categories stored in user document
@@ -473,7 +471,7 @@ export async function getUserCategories(user: User | null): Promise<string[]> {
             }
         }
         
-        return categories;
+        return categories.sort((a, b) => a.localeCompare(b));
     }
 
     return ["Error returning categories"];

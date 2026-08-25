@@ -36,7 +36,7 @@ interface BudgetCardProps {
     id: string;
 }
 
-export default function BudgetCard({budgetName, budgetAmount, spent, iconName}: BudgetCardProps
+export default function BudgetCard({id, budgetName, budgetAmount, spent, iconName}: BudgetCardProps
 ) {
     const {classes} = useStyles();
     const icon = icons.find(icon => icon.name === iconName);
@@ -58,7 +58,7 @@ export default function BudgetCard({budgetName, budgetAmount, spent, iconName}: 
 
                 selectedIconName={icon?.name}
                 onIconSelect={handleIconSelect}
-                categoryName={budgetName}
+                categoryID={id}
             />
 
             <Text ta="center" fw={700} className={classes.title} data-test={"budget-name"}>
