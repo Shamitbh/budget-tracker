@@ -58,7 +58,7 @@ export default function AddNewExpense() {
                     values.is_yearly,
                 );
 
-                addOrUpdateExpense(user, expense).then(() => {
+                addOrUpdateExpense(user, expense, values.is_monthly).then(() => {
                     form.reset();
                 });
             })}>
