@@ -88,6 +88,7 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
                 const expAsClass = new ExpenseClass(exp.name, exp.categoryID, exp.amount, exp.description, exp.vendor,  exp.month, exp.year, exp.is_monthly, exp.is_yearly, exp.is_deleted);
                 expAsClass.id = exp.id;
                 expAsClass.recurringExpenseID = exp.recurringExpenseID;
+                expAsClass.recurrenceActive = exp.recurrenceActive;
                 
                 await addOrUpdateExpense(user, expAsClass).then(() => {
                     console.log("Expense updated: ", updatedExpenses[expenseIndex])
@@ -105,7 +106,7 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
 
     const stopRecurrence = async (expense: Expense) => {
         if (!expense.recurringExpenseID) return;
-        await deactivateRecurringExpense(user, expense.recurringExpenseID);
+        await deactivateRecurringExpense(user, expense);
     };
 
 
@@ -193,7 +194,7 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
 
 
                                         <TableCell className={"text-center w-[20px]"}>
-                                            {expense.recurringExpenseID && (
+                                            {expense.recurringExpenseID && expense.recurrenceActive !== false && (
                                                 <Button
                                                     variant={"ghost"}
                                                     size={"sm"}
@@ -202,6 +203,9 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
                                                 >
                                                     Stop
                                                 </Button>
+                                            )}
+                                            {expense.recurringExpenseID && expense.recurrenceActive === false && (
+                                                <span className={"text-sm text-gray-500"}>Stopped</span>
                                             )}
                                         </TableCell>
                                     </TableRow>
