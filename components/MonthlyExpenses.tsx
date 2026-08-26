@@ -190,6 +190,13 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                     </TableRow>
                 </TableHeader>
                 <TableBody>
+                    {currentExpenses.length === 0 && !showForm && (
+                        <TableRow>
+                            <TableCell colSpan={4} className="h-24 text-center text-gray-500">
+                                No monthly expenses yet.
+                            </TableCell>
+                        </TableRow>
+                    )}
                     {
                         currentExpenses.map((expense, index) => {
                                 return (
@@ -273,20 +280,18 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                             </TableCell>
                         </TableRow>
                     }
-                    {/* TOTALS */}
-                    <TableRow>
-                        <TableCell className={"text-right font-mono"} colSpan={2}>
-                            {/*Total:*/}
-                        </TableCell>
-                        <TableCell className={"text-center font-mono font-bold"}>
-                            {/*TODO put this in summary document...? */}
-                            ${currentExpenses.reduce((total, expense) => total + expense.amount, 0).toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        })}
-
-                        </TableCell>
-                    </TableRow>
+                    {currentExpenses.length > 0 && (
+                        <TableRow>
+                            <TableCell className="text-right font-semibold" colSpan={2}>Total</TableCell>
+                            <TableCell className="text-center font-mono font-bold">
+                                ${currentExpenses.reduce((total, expense) => total + expense.amount, 0).toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            })}
+                            </TableCell>
+                            <TableCell/>
+                        </TableRow>
+                    )}
 
 
                 </TableBody>
