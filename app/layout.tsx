@@ -33,7 +33,7 @@ export default function RootLayout({
         const nextColorScheme = value || (colorScheme === 'dark' ? 'light' : 'dark');
         setColorScheme(nextColorScheme);
         if (typeof window !== "undefined") {
-            window.localStorage.setItem("argonaut-color-scheme", nextColorScheme);
+            window.localStorage.setItem("budget-tracker-color-scheme", nextColorScheme);
         }
     };
 
@@ -41,7 +41,7 @@ export default function RootLayout({
     // set collapsed to initially true if on mobile (or any small screen)
     useEffect(() => {
         setCollapsed(window.innerWidth < 640)
-        const savedColorScheme = window.localStorage.getItem("argonaut-color-scheme");
+        const savedColorScheme = window.localStorage.getItem("budget-tracker-color-scheme");
         if (savedColorScheme === "light" || savedColorScheme === "dark") {
             setColorScheme(savedColorScheme);
         }

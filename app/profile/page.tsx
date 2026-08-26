@@ -56,7 +56,7 @@ export default function ProfilePage() {
             <div className={`p-6 ${colorScheme === "dark" ? "text-white" : "text-slate-900"}`}>
                 <div className="mb-8">
                     <Title order={1}>Profile</Title>
-                    <Text color="dimmed">You’re currently exploring Argonaut in guest mode.</Text>
+                    <Text color="dimmed">You’re currently exploring Budget Tracker in guest mode.</Text>
                 </div>
                 <Paper radius="md" withBorder p="xl" maw={680}>
                     <Group align="flex-start" noWrap>
@@ -97,7 +97,7 @@ export default function ProfilePage() {
                         mx="auto"
                         imageProps={{referrerPolicy: "no-referrer"}}
                     />
-                    <Title order={3} mt="md">{user.displayName || "Argonaut user"}</Title>
+                    <Title order={3} mt="md">{user.displayName || "Budget Tracker user"}</Title>
                     <Text size="sm" color="dimmed" mt={4}>{user.email}</Text>
                     <Badge mt="md" variant="light">Signed in with {providerName}</Badge>
                 </Paper>
@@ -167,7 +167,7 @@ export default function ProfilePage() {
 
                     <Paper radius="md" withBorder p="lg" sx={{borderColor: "var(--mantine-color-red-5)"}}>
                         <Title order={3} color="red">Danger zone</Title>
-                        <Text size="sm" color="dimmed" mt={4} mb="lg">Permanently delete your account and revoke access to Argonaut.</Text>
+                        <Text size="sm" color="dimmed" mt={4} mb="lg">Permanently delete your account and revoke access to Budget Tracker.</Text>
                         <Button color="red" variant="light" leftIcon={<IconTrash size={16}/>} onClick={() => setDeleteOpened(true)}>Delete account</Button>
                     </Paper>
                 </Stack>
