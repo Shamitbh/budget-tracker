@@ -82,10 +82,9 @@ export default function BudgetCard({id, budgetName, budgetAmount, spent, iconNam
             <Progress value={percentProgress} mt={5} data-test={"budget-progress-bar"}/>
 
             <Group position="apart" mt="md">
-                <Link href={"#"}>
-                    {/*TODO: make this go to the page where we can edit budget info*/}
+                <Link href="/budgets">
                     <Badge className={"hover:shadow"}>
-                        edit
+                        Manage
                     </Badge>
                 </Link>
                 <span/>

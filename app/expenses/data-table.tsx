@@ -109,10 +109,6 @@ const CellRow = ({row, colorScheme}: CellProps) => {
     return (
         <TableRow
             key={row.id}
-            className={"cursor-pointer"}
-            onClick={() => {
-                console.log("clicked row")
-            }}
             data-state={row.getIsSelected() && "selected"}
         >
             {row.getVisibleCells().map((cell: Cell<Expense, unknown>) => (
