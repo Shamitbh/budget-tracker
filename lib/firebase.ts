@@ -280,7 +280,6 @@ export async function addOrUpdateExpense(user: User | null, expense: ExpenseClas
                     }
                 });
                 
-                console.log(`Expense document updated with ID: ${expense.id}`);
                 // TODO: account for an expense changing amounts or categories
 
             // ADD NEW EXPENSE
@@ -309,7 +308,6 @@ export async function addOrUpdateExpense(user: User | null, expense: ExpenseClas
                         );
                     }
                 });
-                console.log("Expense document added with ID: ", expenseRef.id);
             }
             
         } catch (e) {

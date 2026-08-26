@@ -83,7 +83,7 @@ export default function Page() {
                 setBudgetInfo(info);
                 setCategoryBudgets(categoryData);
                 // console.log(categoryData)
-            }).catch(error => console.log("getCategoryBudgets error" + error)) 
+            }).catch(error => console.error("Unable to load budget analysis", error))
             
         }
                                   

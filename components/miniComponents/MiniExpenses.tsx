@@ -1,7 +1,7 @@
 "use client"
 import {DataTable} from "@/app/expenses/data-table";
 import React from "react";
-import {DateData, Expense} from "@/lib/Interfaces";
+import {Expense} from "@/lib/Interfaces";
 import {useAuth} from "@/app/context";
 import {useExpenses} from "@/lib/firebase";
 import AddExpensePopover from "@/components/AddExpensePopover";
@@ -113,12 +113,6 @@ const columns: ColumnDef<Expense>[] = [
 ]
 
 export default function MiniExpenses() {
-    const dateData: DateData = {
-        month: 9,
-        year: 2023,
-        monthName: "September"
-    }
-
     const {user, loading} = useAuth();
     // const {colorScheme} = useMantineTheme();
     const PRIMARY_COL_HEIGHT = rem(400);

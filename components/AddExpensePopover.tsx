@@ -71,7 +71,6 @@ function AddExpenseForm({month, year}: {month?: number; year?: number}) {
     const darkModeClass = `${colorScheme == 'dark' ? "text-white" : ""} `
     const width = `w-[200px]`;
     const halfWidth = `w-[98px]`;
-    const categoryRef = useRef("");
     const nameRef = useRef<HTMLInputElement>(null);
     const priceRef = useRef<HTMLInputElement>(null);
     const [category, setCategory] = useState("");
@@ -114,10 +113,7 @@ function AddExpenseForm({month, year}: {month?: number; year?: number}) {
                     <CategoryPicker
                         value={category}
 
-                        onCategoryChange={(category) => {
-                            handleCategoryChange(category)
-                            console.log(categoryRef.current)
-                        }}
+                        onCategoryChange={handleCategoryChange}
 
                     />
                 </div>

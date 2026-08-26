@@ -53,10 +53,8 @@ export default function BudgetCard({id, budgetName, budgetAmount, spent, iconNam
 
     return (
         <Paper radius="md" withBorder className={classes.card} mt={`calc(${ICON_SIZE} / 3)`} data-test={"budget-card"}>
-            {/*TODO: icon not changing dynamically!*/}
             <IconPickerPopover
-
-                selectedIconName={icon?.name}
+                selectedIconName={selectedIcon?.name}
                 onIconSelect={handleIconSelect}
                 categoryID={id}
             />

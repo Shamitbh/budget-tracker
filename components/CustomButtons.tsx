@@ -3,21 +3,17 @@ import React, {useState} from "react";
 import {useDisclosure} from "@mantine/hooks";
 import {
     Button,
-    ColorPicker,
     ColorSwatch,
     DEFAULT_THEME,
-    Input,
     Modal,
     NumberInput,
     Popover,
-    rem,
     Text,
     TextInput,
     ThemeIcon
 } from "@mantine/core";
 import {CategoryPicker} from "@/components/CategoryPicker";
 import {Spacer} from "@nextui-org/react";
-// import {ColorPicker} from "@/components/ColorPicker";
 import {useForm} from "@mantine/form";
 import {CustomButton, ExpenseClass} from "@/lib/Interfaces";
 import {IconCheck, IconPencil, IconPlus} from "@tabler/icons-react";
@@ -42,47 +38,6 @@ const colorMapping: { [key: string]: string } = {
     [DEFAULT_THEME.colors.gray[DEFAULT_THEME.colors.gray.length - colorValueOffset]]: "gray",
 };
 
-
-const sampleButtons: CustomButton[] = [
-    {
-        iconName: "train",
-        label: "Train",
-        color: "cyan",
-        action: {
-            cost: 2.90,
-            category: "Transportation"
-        },
-
-    },
-    {
-        iconName: "bell",
-        label: "Lunch",
-        color: "light",
-        action: {
-            cost: 15,
-            category: "Food"
-        },
-    },
-    {
-        iconName: "beer",
-        label: "Bar",
-        color: "red",
-        action: {
-            cost: 20,
-            category: "Activities"
-        },
-    },
-    {
-        iconName: "archive",
-        label: "Work",
-        color: "yellow",
-        action: {
-            cost: 0,
-            category: "Work"
-        },
-    },
-]
-const ICON_SIZE = rem(60);
 
 export const CustomButtons = () => {
     const {user} = useAuth();
@@ -158,7 +113,7 @@ export const CustomButtons = () => {
                                 toast.success("Automation successful: " + button.label + " $" + button.action.cost)
                                 // send to database
                                 const newExpense: ExpenseClass = new ExpenseClass(button.label, button.action.category, button.action.cost);
-                                addOrUpdateExpense(user, newExpense).then( () => console.log("Button automation expense sent to firebase"))
+                                void addOrUpdateExpense(user, newExpense)
                             }}
                         />
                     ))
@@ -217,7 +172,6 @@ export const CustomButtons = () => {
                 <div className={"sm:m-5 md:m-15 "}>
                     <form
                         onSubmit={form.onSubmit((values) => {
-                            console.log("Form submitted:")
                             const newButton: CustomButton = {
                                 iconName: values.iconName ? values.iconName : "bell",
                                 label: values.label ? values.label : "New button",
@@ -370,82 +324,6 @@ const CustomButton = ({customButton, onClick}: CustomButtonProps) => {
         </Button>
     )
 }
-
-interface AddNewButtonProps {
-    onClick: () => void
-}
-
-const AddNewButton = ({onClick}: AddNewButtonProps) => {
-    const opened = true;
-    return (
-        <>
-            <div
-                style={{
-                    paddingLeft: '200px'
-                }}
-            >
-
-                <Modal
-                    size={"xl"}
-                    zIndex={1000}
-                    opened={opened}
-                    onClose={close}
-                    title={"Add new button"}
-                >
-                    {/*    MODAL CONTENT*/}
-                    <Text>
-                        This allows you to create a button that will log a specific expense every time you push it.
-                    </Text>
-                    <Text>
-                        Button Name:
-                        <Input/>
-                    </Text>
-
-                    <Text>
-                        Button Icon:
-
-                    </Text>
-
-                    <Text>
-                        Button Color:
-                        <ColorPicker/>
-
-                    </Text>
-                    <Text>
-                        Expense Category:
-                        <CategoryPicker
-                            onCategoryChange={
-                                (category) => console.log(category)
-                            }
-
-                        />
-                    </Text>
-                    <Text>
-                        Price
-                        <NumberInput
-
-                            defaultValue={0}
-                            parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
-                            formatter={(value) =>
-                                !Number.isNaN(parseFloat(value))
-                                    ? `$ ${value}`.replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ',')
-                                    : '$ '
-                            }
-                        />
-                    </Text>
-                    <Spacer y={1}/>
-                    <Button
-                        variant={"light"}
-                        color={"cyan"}
-                        onClick={close}>
-                        Save
-                    </Button>
-                </Modal>
-            </div>
-        </>
-    )
-}
-
 
 interface CustomSwatchProps {
     color: string,

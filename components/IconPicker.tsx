@@ -11,13 +11,11 @@ interface IconPickerProps {
     categoryID?: string;
 }
 
-// @ts-ignore
 export default function IconPicker({onSelect, categoryID}: IconPickerProps): React.JSX.Element {
     const {user, loading} = useAuth();
     const onIconChange = async (categoryID: string, iconName: string) => {
         if (user) {
             await changeCategoryIcon(user, iconName, categoryID).then(() => {
-                console.log("Icon changed")
             });
         }
     }
@@ -31,6 +29,7 @@ export default function IconPicker({onSelect, categoryID}: IconPickerProps): Rea
             {icons.map(icon => {
                 return (
                     <ActionIcon
+                        aria-label={`Choose ${icon.name} icon`}
                         variant={""}
                         key={icon.name}
                         className={"hover:bg-gray-200"}

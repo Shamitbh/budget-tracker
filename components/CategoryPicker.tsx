@@ -1,16 +1,16 @@
 import {useAuth} from "@/app/context";
 import {getUserCategories} from "@/lib/firebase";
 import {Select} from "@mantine/core";
-import React, {useEffect, useState} from "react";
+import React, {ReactNode, useEffect, useState} from "react";
 
 interface Props {
     onCategoryChange: (category: string) => void,
-    dropdownPosition?: "top" | "bottom",
-
-    [restProps: string]: any;
+    dropdownPosition?: "top" | "bottom";
+    value?: string;
+    error?: ReactNode;
 }
 
-export function CategoryPicker({onCategoryChange, dropdownPosition, ...restProps}: Props) {
+export function CategoryPicker({onCategoryChange, dropdownPosition, value, error}: Props) {
     const {user, loading} = useAuth();
 
     //// const categories: Category[] = useCategories(user);
@@ -39,9 +39,9 @@ export function CategoryPicker({onCategoryChange, dropdownPosition, ...restProps
                 searchable
                 clearable
                 zIndex={1000}
-                onChange={onCategoryChange}
-                value={restProps["value"] || ""}
-                error={restProps["error"]}
+                onChange={(nextValue) => onCategoryChange(nextValue ?? "")}
+                value={value || ""}
+                error={error}
                 dropdownPosition={dropdownPosition || "bottom"}
         />
     )
