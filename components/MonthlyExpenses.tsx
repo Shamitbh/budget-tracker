@@ -10,13 +10,17 @@ import {addOrUpdateExpense, deactivateRecurringExpense, useExpenses} from "@/lib
 import {useAuth} from "@/app/context";
 import {debounce} from "lodash"
 import {useMantineTheme} from "@mantine/core";
+import toast from "react-hot-toast";
+import Loading from "@/app/loading";
 
 interface MonthlyExpensesProps {
     width?: string;
     height?: string;
+    month?: number;
+    year?: number;
 }
 
-export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = {width: "w-full", height: "h-full"}) {
+export default function MonthlyExpenses({width = "w-full", height = "h-full", month, year}: MonthlyExpensesProps) {
     const {colorScheme} = useMantineTheme();
     const initialExpenseRow = {
         name: "",
@@ -29,7 +33,7 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
     const [newExpenseRow, setNewExpenseRow] = useState(initialExpenseRow);
     const {user, loading} = useAuth();
 
-    const currentExpenses: Expense[] = useExpenses(user, true);
+    const currentExpenses: Expense[] = useExpenses(user, true, month, year);
 
     // TODO: Too many hooks or re-renders below
     // Updating from MonthlyExpenses is commented out for now
@@ -46,7 +50,7 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
     // }, [user])
 
     // TODO replace with custom loading skeleton
-    if (loading) return <div>Loading...</div>
+    if (loading) return <Loading/>
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>, field: string) => {
         const value = field === 'amount' ? parseFloat(e.target.value) : e.target.value;
@@ -90,9 +94,12 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
                 expAsClass.recurringExpenseID = exp.recurringExpenseID;
                 expAsClass.recurrenceActive = exp.recurrenceActive;
                 
-                await addOrUpdateExpense(user, expAsClass).then(() => {
-                    console.log("Expense updated: ", updatedExpenses[expenseIndex])
-                });
+                try {
+                    await addOrUpdateExpense(user, expAsClass);
+                    toast.success("Monthly expense updated");
+                } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Unable to update expense");
+                }
             }
         }
 
@@ -106,7 +113,12 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
 
     const stopRecurrence = async (expense: Expense) => {
         if (!expense.recurringExpenseID) return;
-        await deactivateRecurringExpense(user, expense);
+        try {
+            await deactivateRecurringExpense(user, expense);
+            toast.success("Future occurrences stopped");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Unable to stop recurrence");
+        }
     };
 
 
@@ -118,13 +130,22 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
             newExpenseRow.amount,
             newExpenseRow.description,
             "", // vendor
-            today.getMonth() + 1,
-            today.getFullYear(),
+            month ?? today.getMonth() + 1,
+            year ?? today.getFullYear(),
             true // is_monthly,
         )
 
-        // const newExpense = _newExpense.toJson();
-        await addOrUpdateExpense(user, _newExpense, true)
+        if (!_newExpense.name.trim() || !_newExpense.categoryID || _newExpense.amount <= 0) {
+            toast.error("Enter a name, category, and amount greater than zero");
+            return;
+        }
+        try {
+            await addOrUpdateExpense(user, _newExpense, true)
+            toast.success("Monthly expense added");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Unable to add monthly expense");
+            return;
+        }
 
 
         // setCurrentExpenses([...currentExpenses, newExpense]);
@@ -151,6 +172,7 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
                         className={"mr-16"}
                         variant={"secondary"}
                         size={"sm"}
+                        aria-label={showForm ? "Close monthly expense form" : "Add monthly expense"}
                         onClick={showForm ? toggleForm : toggleForm}
                     >
                         <IconPlus/>
@@ -241,6 +263,8 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
                             </TableCell>
                             <TableCell className={"text-center "}>
                                 <button
+                                    type="button"
+                                    aria-label="Save monthly expense"
                                     className={"pr-2 pl-2 pb-1"}
                                     onClick={handleSubmit}
                                 >

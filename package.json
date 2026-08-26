@@ -41,6 +41,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "cookies-next": "^2.1.2",
+    "encoding": "^0.1.13",
     "eslint-config-next": "^13.4.17",
     "feather-icons": "^4.29.0",
     "firebase": "^9.23.0",

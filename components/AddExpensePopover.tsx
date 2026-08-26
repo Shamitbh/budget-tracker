@@ -10,43 +10,48 @@ import {addOrUpdateExpense} from "@/lib/firebase";
 import {useAuth} from "@/app/context";
 
 interface AddExpensePopoverProps {
-    heightClass?: string
+    heightClass?: string;
+    month?: number;
+    year?: number;
 }
 
-export default function AddExpensePopover({heightClass}: AddExpensePopoverProps) {
+export default function AddExpensePopover({heightClass, month, year}: AddExpensePopoverProps) {
     const {colorScheme} = useMantineColorScheme();
     const height = heightClass ? heightClass : `h-[48px]`;
     return (
         <>
             <div className={"flex"}>
                 <Popover>
-                    <PopoverTrigger>
-                        <div
+                    <PopoverTrigger asChild>
+                        <button
+                            type="button"
+                            aria-label="Add expense"
                             className={`${height} + w-[50px] hover:shadow hover:bg-blue-400 rounded-l-2xl  p-3 bg-blue-500 font-semibold text-white`}
                         >
                             New
 
-                        </div>
+                        </button>
 
                     </PopoverTrigger>
                     <PopoverContent
                         className={`${colorScheme == 'dark' ? "bg-black border-gray-700 shadow-2xl" : ""} `}
                     >
-                        <AddExpenseForm/>
+                        <AddExpenseForm month={month} year={year}/>
                     </PopoverContent>
                 </Popover>
 
 
                 <Popover>
-                    <PopoverTrigger>
-
-                        <div
+                    <PopoverTrigger asChild>
+                        <button
+                            type="button"
+                            aria-label="Open quick expense actions"
                             className={`${height} + hover:shadow w-[30px]  pl-1 rounded-r-2xl bg-blue-500 hover:bg-blue-400 text-white pt-3.5`}
                         >
                             <IconChevronDown
                                 size={20}
                             />
-                        </div>
+                        </button>
                     </PopoverTrigger>
                     <PopoverContent>
 
@@ -60,16 +65,16 @@ export default function AddExpensePopover({heightClass}: AddExpensePopoverProps)
     )
 }
 
-function AddExpenseForm() {
+function AddExpenseForm({month, year}: {month?: number; year?: number}) {
     const {user} = useAuth();
     const {colorScheme} = useMantineTheme();
     const darkModeClass = `${colorScheme == 'dark' ? "text-white" : ""} `
     const width = `w-[200px]`;
     const halfWidth = `w-[98px]`;
-    const categoryRef = useRef("");
     const nameRef = useRef<HTMLInputElement>(null);
     const priceRef = useRef<HTMLInputElement>(null);
     const [category, setCategory] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
     const handleCategoryChange = (category: string) => {
         setCategory(category);
@@ -108,10 +113,7 @@ function AddExpenseForm() {
                     <CategoryPicker
                         value={category}
 
-                        onCategoryChange={(category) => {
-                            handleCategoryChange(category)
-                            console.log(categoryRef.current)
-                        }}
+                        onCategoryChange={handleCategoryChange}
 
                     />
                 </div>
@@ -119,7 +121,8 @@ function AddExpenseForm() {
 
                 <div className={""}>
                     <Button
-                        onClick={() => {
+                        loading={submitting}
+                        onClick={async () => {
                             if (nameRef.current?.value == "") {
                                 toast.error("Please enter a name")
                                 return;
@@ -129,8 +132,6 @@ function AddExpenseForm() {
                                 return;
                             }
 
-                            toast.success("Added expense: " + priceRef.current?.value + " to " + category)
-
                             // first, make expense class
                             const priceString = priceRef.current?.value.replace(/\$|,/g, ''); // Remove the dollar sign and comma
                             const price = priceString ? parseFloat(priceString) : 0;
@@ -138,10 +139,31 @@ function AddExpenseForm() {
 
                             // TODO: way to have default date (today) as ExpenseClass default?
                             const today = new Date();
-                            const expense = new ExpenseClass(nameRef.current!.value, category, price, "", "", today.getMonth() + 1, today.getFullYear())
-                            addOrUpdateExpense(user, expense).then(() => {
-                                console.log("Expense added: ", expense)
-                            })
+                            const expense = new ExpenseClass(
+                                nameRef.current!.value,
+                                category,
+                                price,
+                                "",
+                                "",
+                                month ?? today.getMonth() + 1,
+                                year ?? today.getFullYear(),
+                            )
+                            if (price <= 0) {
+                                toast.error("Expense amount must be greater than zero");
+                                return;
+                            }
+                            setSubmitting(true);
+                            try {
+                                await addOrUpdateExpense(user, expense);
+                                toast.success(`Added ${expense.name}`);
+                                if (nameRef.current) nameRef.current.value = "";
+                                if (priceRef.current) priceRef.current.value = "";
+                                setCategory("");
+                            } catch (error) {
+                                toast.error(error instanceof Error ? error.message : "Unable to add expense");
+                            } finally {
+                                setSubmitting(false);
+                            }
 
                         }}
                         variant={"outline"}

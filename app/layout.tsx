@@ -47,18 +47,6 @@ export default function RootLayout({
         }
     }, [])
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const footerLinks = [
-        {
-            link: "link1",
-            label: "GitHub"
-
-        },
-        {
-            link: "link2",
-            label: "About"
-        }
-    ]
     return (
         <>
             <CacheProvider value={cache}>
@@ -78,7 +66,6 @@ export default function RootLayout({
 
                         <AuthProvider>
                             <body className={`h-[calc(100vh-0.1rem)] ${colorScheme == 'dark' ? "bg-slate-900" : ""} `}>
-                            {/*<ChakraProvider>*/}
                             <Header
                                 onCollapse={() => setCollapsed(!collapsed)}
                             />
@@ -89,11 +76,9 @@ export default function RootLayout({
                                 >
                                     {children}
                                 </main>
-                                {/*<Footer links={footerLinks}/>*/}
 
                             </div>
 
-                            {/*</ChakraProvider>*/}
                             <Toaster
                                 position={"bottom-right"}
                             />
