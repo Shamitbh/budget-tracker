@@ -9,6 +9,9 @@ import NavBar from "@/components/NavBar";
 import {useEffect, useState} from "react";
 import Head from "next/head";
 import {Toaster} from 'react-hot-toast';
+import {Manrope} from "next/font/google";
+
+const manrope = Manrope({subsets: ["latin"], display: "swap"});
 
 export default function RootLayout({
                                        children,
@@ -55,7 +58,11 @@ export default function RootLayout({
                     toggleColorScheme={toggleColorScheme}
                 >
                     <MantineProvider
-                        theme={{colorScheme}}
+                        theme={{
+                            colorScheme,
+                            fontFamily: manrope.style.fontFamily,
+                            headings: {fontFamily: manrope.style.fontFamily},
+                        }}
                         withGlobalStyles
                         withNormalizeCSS
                     >
@@ -65,7 +72,7 @@ export default function RootLayout({
                         </Head>
 
                         <AuthProvider>
-                            <body className={`h-[calc(100vh-0.1rem)] ${colorScheme == 'dark' ? "bg-slate-900" : ""} `}>
+                            <body className={`${manrope.className} h-[calc(100vh-0.1rem)] ${colorScheme == 'dark' ? "bg-slate-900" : ""}`}>
                             <Header
                                 onCollapse={() => setCollapsed(!collapsed)}
                             />
