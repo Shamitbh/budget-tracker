@@ -18,7 +18,7 @@ export default function LandingPage() {
                         Make every dollar easier to understand.
                     </Title>
                     <Text size="lg" color="dimmed" mt="md" maw={600}>
-                        Argonaut brings expenses, budgets, and savings goals together in one calm workspace.
+                        Budget Tracker brings expenses, budgets, and savings goals together in one calm workspace.
                     </Text>
                     <div className="mt-10 grid gap-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                         {features.map(({icon: Icon, title, description}) => (

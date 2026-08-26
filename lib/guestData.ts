@@ -1,8 +1,8 @@
 import {Category, CustomButton, Expense, Goal, MonthSummary} from "@/lib/Interfaces";
 
-export const GUEST_USER_ID = "__argonaut_guest__";
-const STORAGE_KEY = "argonaut-guest-data";
-const CHANGE_EVENT = "argonaut-guest-data-change";
+export const GUEST_USER_ID = "__budget_tracker_guest__";
+const STORAGE_KEY = "budget-tracker-guest-data";
+const CHANGE_EVENT = "budget-tracker-guest-data-change";
 
 export type GuestData = {
     categories: Category[];

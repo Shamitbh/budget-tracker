@@ -59,7 +59,7 @@ export default function NavBar({collapsed}: Props) {
             {animationCompleted && !collapsed && 
                 <Link href="/" 
                     className={`text-2xl font-bold font-mono justify-self-start transition-all`}
-              >Argonaut
+              >Budget Tracker
               </Link>}
               
             {animationCompleted && !collapsed && 

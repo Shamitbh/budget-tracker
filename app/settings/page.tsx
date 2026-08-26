@@ -18,7 +18,7 @@ export default function SettingsPage() {
         <div className={`p-6 ${colorScheme === "dark" ? "text-white" : "text-slate-900"}`}>
             <div className="mb-8">
                 <Title order={1}>Settings</Title>
-                <Text color="dimmed">Customize how Argonaut looks and manage your account.</Text>
+                <Text color="dimmed">Customize how Budget Tracker looks and manage your account.</Text>
             </div>
             <Stack spacing="lg" maw={760}>
                 <Paper radius="md" withBorder p="lg">

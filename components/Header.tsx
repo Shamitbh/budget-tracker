@@ -25,7 +25,7 @@ export default function Header({onCollapse}: Props) {
         )}
         <Link href="/" 
             className={`text-2xl font-bold font-mono justify-self-start transition-all ${colorScheme == 'dark'? "text-amber-50" : ""}`}
-            >Argonaut
+            >Budget Tracker
         </Link>
            
         <Link href="https://github.com/Shamitbh/budget-tracker"
