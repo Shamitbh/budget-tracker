@@ -24,7 +24,7 @@ export default function Header({onCollapse}: Props) {
             </button>
         )}
         <Link href="/" 
-            className={`text-2xl font-bold font-mono justify-self-start transition-all ${colorScheme == 'dark'? "text-amber-50" : ""}`}
+            className={`text-2xl font-bold justify-self-start transition-all ${colorScheme == 'dark'? "text-amber-50" : ""}`}
             >Budget Tracker
         </Link>
            

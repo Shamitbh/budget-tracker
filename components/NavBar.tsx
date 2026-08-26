@@ -58,13 +58,13 @@ export default function NavBar({collapsed}: Props) {
           {/* <div className="flex flex-row px-2 py-1 gap-3 items-center">
             {animationCompleted && !collapsed && 
                 <Link href="/" 
-                    className={`text-2xl font-bold font-mono justify-self-start transition-all`}
+                    className={`text-2xl font-bold justify-self-start transition-all`}
               >Budget Tracker
               </Link>}
               
             {animationCompleted && !collapsed && 
                 <Link href="/" 
-                    className="text-xs font-mono bg-slate-200 rounded-sm p-1"
+                    className="text-xs bg-slate-200 rounded-sm p-1"
                 >v0.2
                 </Link>}
                 
