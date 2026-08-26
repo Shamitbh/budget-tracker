@@ -6,7 +6,7 @@ import {Input} from "@/components/ui/input"
 import {CategoryPicker} from "@/components/CategoryPicker";
 import {IconPlus} from "@tabler/icons-react";
 import {ChangeEvent, MutableRefObject, useEffect, useRef, useState} from "react";
-import {addOrUpdateExpense, useExpenses} from "@/lib/firebase";
+import {addOrUpdateExpense, deactivateRecurringExpense, useExpenses} from "@/lib/firebase";
 import {useAuth} from "@/app/context";
 import {debounce} from "lodash"
 import {useMantineTheme} from "@mantine/core";
@@ -86,6 +86,8 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
                 // convert to class for addOrUpdateExpense function
                 const exp = updatedExpenses[expenseIndex];
                 const expAsClass = new ExpenseClass(exp.name, exp.categoryID, exp.amount, exp.description, exp.vendor,  exp.month, exp.year, exp.is_monthly, exp.is_yearly, exp.is_deleted);
+                expAsClass.id = exp.id;
+                expAsClass.recurringExpenseID = exp.recurringExpenseID;
                 
                 await addOrUpdateExpense(user, expAsClass).then(() => {
                     console.log("Expense updated: ", updatedExpenses[expenseIndex])
@@ -100,6 +102,11 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
     const toggleForm = () => {
         setShowForm(!showForm);
     }
+
+    const stopRecurrence = async (expense: Expense) => {
+        if (!expense.recurringExpenseID) return;
+        await deactivateRecurringExpense(user, expense.recurringExpenseID);
+    };
 
 
     const handleSubmit = async () => {
@@ -116,7 +123,7 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
         )
 
         // const newExpense = _newExpense.toJson();
-        await addOrUpdateExpense(user, _newExpense)
+        await addOrUpdateExpense(user, _newExpense, true)
 
 
         // setCurrentExpenses([...currentExpenses, newExpense]);
@@ -185,8 +192,17 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
                                         />
 
 
-                                        <TableCell className={"text-center text-2xl w-[20px]"}>
-                                            <button className={" pr-2 pl-2 pb-1"}>...</button>
+                                        <TableCell className={"text-center w-[20px]"}>
+                                            {expense.recurringExpenseID && (
+                                                <Button
+                                                    variant={"ghost"}
+                                                    size={"sm"}
+                                                    title={"Stop creating this expense in future months"}
+                                                    onClick={() => void stopRecurrence(expense)}
+                                                >
+                                                    Stop
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 )

@@ -14,6 +14,7 @@ import {
     onSnapshot,
     orderBy,
     query,
+    runTransaction,
     setDoc,
     updateDoc,
 } from 'firebase/firestore';
@@ -27,6 +28,7 @@ import {
     Goal,
     GoalClass,
     MonthSummary,
+    RecurringExpense,
 } from "@/lib/Interfaces";
 import {useEffect, useState} from "react";
 import {Timestamp} from "@firebase/firestore";
@@ -191,30 +193,66 @@ export function useCategories(user: User | null): Category[] | null {
 }
 
 
-export async function addOrUpdateExpense(user: User | null, expense: ExpenseClass) {
+export async function addOrUpdateExpense(user: User | null, expense: ExpenseClass, createRecurrence: boolean = false) {
     // TODO update. Should be `addOrUpdateExpense` and handle both cases
     // this function sends an expense to firebase
     // this function is not reactive. It is used to send a single expense to firebase
     if (user?.uid) {
         const db: Firestore = getFirestore();
-        const expenseObject = expense.toJson();
-
         try {
             // get reference to expense's month
             const monthString = createMonthYearString(expense.month, expense.year);
             const monthRef = doc(db, usersDirectory, user.uid, "Months", monthString);
 
             // Fetch the document from Firestore to check if it exists
-            const expenseRef = doc(monthRef, "Expenses", expense.id);
+            const recurringExpenseID = expense.recurringExpenseID ?? (createRecurrence ? expense.id : undefined);
+            const expenseID = createRecurrence
+                ? createRecurringOccurrenceID(recurringExpenseID!, expense.month, expense.year)
+                : expense.id;
+            const expenseRef = doc(monthRef, "Expenses", expenseID);
             const expenseDoc = await getDoc(expenseRef);
 
             // UPDATE EXPENSE
             if (expenseDoc.exists()) {
-                // Update the existing document
-                await updateDoc(expenseRef, {
-                    name: expense.name,
-                    amount: expense.amount,
-                    category: expense.categoryID,
+                await runTransaction(db, async (transaction) => {
+                    const currentExpenseDoc = await transaction.get(expenseRef);
+                    if (!currentExpenseDoc.exists()) {
+                        throw new Error(`Expense ${expenseID} no longer exists`);
+                    }
+                    const previousExpense = currentExpenseDoc.data() as Expense;
+
+                    transaction.update(expenseRef, {
+                        name: expense.name,
+                        amount: expense.amount,
+                        categoryID: expense.categoryID,
+                        description: expense.description,
+                        vendor: expense.vendor,
+                    });
+
+                    const summaryUpdates: Record<string, ReturnType<typeof increment>> = {
+                        monthTotal: increment(expense.amount - previousExpense.amount),
+                    };
+                    if (previousExpense.categoryID === expense.categoryID) {
+                        summaryUpdates[`categoryTotals.${expense.categoryID}`] = increment(expense.amount - previousExpense.amount);
+                    } else {
+                        summaryUpdates[`categoryTotals.${previousExpense.categoryID}`] = increment(-previousExpense.amount);
+                        summaryUpdates[`categoryTotals.${expense.categoryID}`] = increment(expense.amount);
+                    }
+                    transaction.update(monthRef, summaryUpdates);
+
+                    if (recurringExpenseID) {
+                        transaction.set(
+                            doc(db, usersDirectory, user.uid, "RecurringExpenses", recurringExpenseID),
+                            {
+                                name: expense.name,
+                                categoryID: expense.categoryID,
+                                amount: expense.amount,
+                                description: expense.description,
+                                vendor: expense.vendor,
+                            },
+                            {merge: true},
+                        );
+                    }
                 });
                 
                 console.log(`Expense document updated with ID: ${expense.id}`);
@@ -222,26 +260,111 @@ export async function addOrUpdateExpense(user: User | null, expense: ExpenseClas
 
             // ADD NEW EXPENSE
             } else {
-                // create and write an expense document with the generated ID
-                await setDoc(expenseRef, expenseObject);
-                console.log("Expense document added with ID: ", expenseRef.id);
+                await runTransaction(db, async (transaction) => {
+                    const existingExpense = await transaction.get(expenseRef);
+                    if (existingExpense.exists()) return;
 
-                // update this month's total spent and category total
-                const monthDoc = await getDoc(monthRef);
-                if (!monthDoc.exists()) {
-                    console.log("Creating summary doc... ", monthString)
-                    await createCurrentMonth(db, user, defaultCategoriesAndIcons);
-                }
-                await updateDoc(monthRef, {
-                    monthTotal: increment(expense.amount),
-                    ["categoryTotals." + expense.categoryID]: increment(expense.amount)
+                    transaction.set(expenseRef, {
+                        ...expense.toJson(),
+                        id: expenseID,
+                        ...(recurringExpenseID ? {recurringExpenseID} : {}),
+                    });
+                    transaction.set(monthRef, {
+                        monthTotal: increment(expense.amount),
+                        categoryTotals: {
+                            [expense.categoryID]: increment(expense.amount),
+                        },
+                    }, {merge: true});
+
+                    if (recurringExpenseID) {
+                        transaction.set(
+                            doc(db, usersDirectory, user.uid, "RecurringExpenses", recurringExpenseID),
+                            recurringExpenseFromExpense(expense, recurringExpenseID),
+                        );
+                    }
                 });
+                console.log("Expense document added with ID: ", expenseRef.id);
             }
             
         } catch (e) {
             console.error("Error adding document: ", e);
         }
     }
+}
+
+export async function deactivateRecurringExpense(user: User | null, recurringExpenseID: string): Promise<void> {
+    if (!user) throw new Error("User not found");
+
+    const recurringRef = doc(getFirestore(), usersDirectory, user.uid, "RecurringExpenses", recurringExpenseID);
+    await updateDoc(recurringRef, {is_active: false});
+}
+
+function recurringExpenseFromExpense(expense: ExpenseClass, id: string): RecurringExpense {
+    return {
+        id,
+        name: expense.name,
+        categoryID: expense.categoryID,
+        amount: expense.amount,
+        description: expense.description,
+        vendor: expense.vendor,
+        startMonth: expense.month,
+        startYear: expense.year,
+        frequency: "monthly",
+        is_active: true,
+    };
+}
+
+function createRecurringOccurrenceID(recurringExpenseID: string, month: number, year: number): string {
+    return `${recurringExpenseID}_${month}_${year}`;
+}
+
+export async function materializeRecurringExpenses(
+    user: User | null,
+    month: number = new Date().getMonth() + 1,
+    year: number = new Date().getFullYear(),
+): Promise<void> {
+    if (!user) return;
+
+    const db = getFirestore();
+    const recurringSnapshot = await getDocs(collection(db, usersDirectory, user.uid, "RecurringExpenses"));
+    const targetMonthIndex = year * 12 + month;
+
+    await Promise.all(recurringSnapshot.docs.map(async (recurringDoc) => {
+        const recurring = recurringDoc.data() as RecurringExpense;
+        const startMonthIndex = recurring.startYear * 12 + recurring.startMonth;
+        if (!recurring.is_active || recurring.frequency !== "monthly" || targetMonthIndex < startMonthIndex) return;
+
+        const monthRef = doc(db, usersDirectory, user.uid, "Months", createMonthYearString(month, year));
+        const expenseID = createRecurringOccurrenceID(recurring.id, month, year);
+        const expenseRef = doc(monthRef, "Expenses", expenseID);
+
+        await runTransaction(db, async (transaction) => {
+            const existingExpense = await transaction.get(expenseRef);
+            if (existingExpense.exists()) return;
+
+            transaction.set(expenseRef, {
+                id: expenseID,
+                name: recurring.name,
+                categoryID: recurring.categoryID,
+                amount: recurring.amount,
+                description: recurring.description,
+                vendor: recurring.vendor,
+                date: new Date(year, month - 1, 1),
+                month,
+                year,
+                is_monthly: true,
+                is_yearly: false,
+                is_deleted: false,
+                recurringExpenseID: recurring.id,
+            } satisfies Expense);
+            transaction.set(monthRef, {
+                monthTotal: increment(recurring.amount),
+                categoryTotals: {
+                    [recurring.categoryID]: increment(recurring.amount),
+                },
+            }, {merge: true});
+        });
+    }));
 }
 
 
@@ -377,6 +500,9 @@ export function useExpenses(user: User | null,monthly?: boolean, month?: number,
             // get this month's expenses from Expenses collection
             const expensesRef = collection(userRef, "Months", monthString, "Expenses");
             const expensesQuery = query(expensesRef, orderBy("date", "desc"));
+
+            void materializeRecurringExpenses(user, Number(monthString.split("_")[0]), Number(monthString.split("_")[1]))
+                .catch((error) => console.error("Error creating recurring expenses: ", error));
 
             const unsubscribe = onSnapshot(expensesQuery, (snapshot) => {
                 const newExpenses: Expense[] = [];

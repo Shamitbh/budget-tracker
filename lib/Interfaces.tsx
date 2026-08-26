@@ -83,6 +83,20 @@ export type Expense = {
     is_monthly: boolean;
     is_yearly: boolean; // this is for yearly expenses
     is_deleted: boolean;
+    recurringExpenseID?: string;
+}
+
+export type RecurringExpense = {
+    id: string;
+    name: string;
+    categoryID: string;
+    amount: number;
+    description: string;
+    vendor: string;
+    startMonth: number;
+    startYear: number;
+    frequency: "monthly";
+    is_active: boolean;
 }
 
 export type Expenses = {
@@ -99,11 +113,12 @@ export class ExpenseClass implements Expense {
         public amount: number,
         public description: string = "",
         public vendor: string = "",
-        public month: number = new Date().getMonth(),
+        public month: number = new Date().getMonth() + 1,
         public year: number = new Date().getFullYear(),
         public is_monthly: boolean = false,
         public is_yearly: boolean = false,
         public is_deleted: boolean = false,
+        public recurringExpenseID?: string,
     ) {
         this.id = this.generateExpenseId();
         this.name = name;
@@ -138,7 +153,8 @@ export class ExpenseClass implements Expense {
             year: this.year,
             is_monthly: this.is_monthly,
             is_yearly: this.is_yearly,
-            is_deleted: this.is_deleted
+            is_deleted: this.is_deleted,
+            ...(this.recurringExpenseID ? {recurringExpenseID: this.recurringExpenseID} : {})
         }
     }
 
