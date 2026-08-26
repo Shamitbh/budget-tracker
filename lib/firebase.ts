@@ -268,6 +268,7 @@ export async function addOrUpdateExpense(user: User | null, expense: ExpenseClas
                         ...expense.toJson(),
                         id: expenseID,
                         ...(recurringExpenseID ? {recurringExpenseID} : {}),
+                        ...(recurringExpenseID ? {recurrenceActive: true} : {}),
                     });
                     transaction.set(monthRef, {
                         monthTotal: increment(expense.amount),
@@ -292,11 +293,18 @@ export async function addOrUpdateExpense(user: User | null, expense: ExpenseClas
     }
 }
 
-export async function deactivateRecurringExpense(user: User | null, recurringExpenseID: string): Promise<void> {
+export async function deactivateRecurringExpense(user: User | null, expense: Expense): Promise<void> {
     if (!user) throw new Error("User not found");
+    if (!expense.recurringExpenseID) throw new Error("Expense is not recurring");
 
-    const recurringRef = doc(getFirestore(), usersDirectory, user.uid, "RecurringExpenses", recurringExpenseID);
-    await updateDoc(recurringRef, {is_active: false});
+    const db = getFirestore();
+    const recurringRef = doc(db, usersDirectory, user.uid, "RecurringExpenses", expense.recurringExpenseID);
+    const expenseRef = doc(db, usersDirectory, user.uid, "Months", createMonthYearString(expense.month, expense.year), "Expenses", expense.id);
+
+    await runTransaction(db, async (transaction) => {
+        transaction.update(recurringRef, {is_active: false});
+        transaction.update(expenseRef, {recurrenceActive: false});
+    });
 }
 
 function recurringExpenseFromExpense(expense: ExpenseClass, id: string): RecurringExpense {
@@ -356,6 +364,7 @@ export async function materializeRecurringExpenses(
                 is_yearly: false,
                 is_deleted: false,
                 recurringExpenseID: recurring.id,
+                recurrenceActive: true,
             } satisfies Expense);
             transaction.set(monthRef, {
                 monthTotal: increment(recurring.amount),
