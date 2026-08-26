@@ -664,7 +664,7 @@ export const useGoals = (user: User | null): Goal[] | null => {
     //     console.log(categoryBudgets)
     //     return [];
     // }
-    return goals && goals.length > 0 ? goals : null;
+    return goals;
 };
 
 export async function addNewGoal(user: User | null, goal_name: string, amt_goal: number, goal_date: Date) {

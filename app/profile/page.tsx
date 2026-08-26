@@ -1,209 +1,171 @@
 "use client";
-//import {Button} from "@/components/ui/button";
-import { TextInput, Button, Image, Paper, Flex, Center, FileButton,
-    Modal, Group } from '@mantine/core';
-import { useForm } from '@mantine/form';
-import { useAuth } from "@/app/context";
-import LoginMantine from "@/components/LoginMantine";
+
+import {useEffect, useState} from "react";
+import {
+    Avatar,
+    Badge,
+    Button,
+    Group,
+    Modal,
+    Paper,
+    Stack,
+    Text,
+    TextInput,
+    Title,
+    useMantineTheme,
+} from "@mantine/core";
+import {useForm} from "@mantine/form";
+import {IconAt, IconKey, IconTrash, IconUser} from "@tabler/icons-react";
+import {deleteUser, getAuth, sendPasswordResetEmail, updateEmail, updateProfile, User} from "firebase/auth";
+import toast from "react-hot-toast";
+
+import {useAuth} from "@/app/context";
 import Loading from "@/app/loading";
-import { updateProfile, updateEmail, deleteUser, User, sendPasswordResetEmail, getAuth } from "firebase/auth";
+import LoginMantine from "@/components/LoginMantine";
 
-import { useDisclosure } from '@mantine/hooks';
-
-
-export default function page(){
+export default function ProfilePage() {
     const {user, loading} = useAuth();
-    const [opened, { close, open }] = useDisclosure(false);
+    const {colorScheme} = useMantineTheme();
+    const [deleteOpened, setDeleteOpened] = useState(false);
+    const [savingName, setSavingName] = useState(false);
+    const [savingEmail, setSavingEmail] = useState(false);
 
+    const nameForm = useForm({
+        initialValues: {name: user?.displayName ?? ""},
+        validate: {name: (value) => value.trim() ? null : "Display name is required"},
+    });
     const emailForm = useForm({
-        initialValues: {
-          email: '',
-        },
-    
-        validate: {
-          email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
-        },
-      });
+        initialValues: {email: user?.email ?? ""},
+        validate: {email: (value) => /^\S+@\S+$/.test(value) ? null : "Enter a valid email"},
+    });
 
-      const nameForm = useForm({
-        initialValues: {
-          name: '',
-        },
-        validate: {
-            name: (value) => (/./.test(value) ? null : 'No name entered'),
-          },
-      });
+    useEffect(() => {
+        if (user) {
+            nameForm.setFieldValue("name", user.displayName ?? "");
+            emailForm.setFieldValue("email", user.email ?? "");
+        }
+    }, [user]);
 
+    if (loading) return <Loading/>;
+    if (!user) return <LoginMantine/>;
 
-    if (loading) {
-        return <Loading/>; // Or return a loading spinner
-    }
-
-    if (!user) {
-        return <LoginMantine/>;
-    }
-
-    const profileURL = user?.photoURL ? user.photoURL : "/default_profile_pic.webp"
+    const usesPassword = user.providerData.some((provider) => provider.providerId === "password");
+    const providerName = usesPassword ? "Email and password" : "Google";
 
     return (
-        <div className='p-3 '> 
-        
-            <Paper
-                shadow={"sm"}
-                p={10}
-                withBorder
-                sx={{
-                    placeContent: "center"
-                }}
-            >   
-                <div className="py-4">
-                    <p className="text-3xl">Profile</p>
-                </div>
+        <div className={`p-6 ${colorScheme === "dark" ? "text-white" : "text-slate-900"}`}>
+            <div className="mb-8">
+                <Title order={1}>Profile</Title>
+                <Text color="dimmed">Manage your personal details and account security.</Text>
+            </div>
 
-                <Image 
-                    maw={240} 
-                    mx="auto" 
-                    radius="50%" 
-                    src={profileURL} 
-                    alt="Profile image" 
-                    imageProps={{referrerPolicy : "no-referrer"}}
+            <div className="grid max-w-5xl gap-5 lg:grid-cols-[280px_1fr]">
+                <Paper radius="md" withBorder p="xl" className="self-start text-center">
+                    <Avatar
+                        src={user.photoURL || "/default_profile_pic.webp"}
+                        alt={user.displayName || "Profile image"}
+                        size={112}
+                        radius={112}
+                        mx="auto"
+                        imageProps={{referrerPolicy: "no-referrer"}}
                     />
-            
+                    <Title order={3} mt="md">{user.displayName || "Argonaut user"}</Title>
+                    <Text size="sm" color="dimmed" mt={4}>{user.email}</Text>
+                    <Badge mt="md" variant="light">Signed in with {providerName}</Badge>
+                </Paper>
 
-                <Center mx="auto">
-                    
-                    <Flex direction={"column"} w={500} align={"center"} gap={"lg"}>
-                        <div className='py-3'>
-                            <FileButton onChange={() => alert('Profile pic updated')} accept="image/png, image/jpeg, image/svg">
-                                {(props) => <Button variant={"outline"} {...props}>Upload image</Button>}
-                            </FileButton>
-                        </div>
-
-                        <form onSubmit={nameForm.onSubmit((values) => { 
-                            if (user != null) {
-                                updateProfile(user, {
-                                    displayName: values.name,
-                                }).then(() => {
-                                    alert('New name is: ' + values.name);
-                                }).catch((error) => {
-                                    alert('Error assigning new name, ' + error);
-                            });
+                <Stack spacing="lg">
+                    <Paper radius="md" withBorder p="lg">
+                        <Group mb="lg"><IconUser size={20}/><Title order={3}>Personal information</Title></Group>
+                        <form onSubmit={nameForm.onSubmit(async ({name}) => {
+                            setSavingName(true);
+                            try {
+                                await updateProfile(user, {displayName: name.trim()});
+                                toast.success("Display name updated");
+                            } catch (error) {
+                                toast.error(error instanceof Error ? error.message : "Unable to update display name");
+                            } finally {
+                                setSavingName(false);
                             }
                         })}>
-
-                            <Flex direction={"row"} align={"flex-end"} gap={"lg"}>
-                                <div className="">
-                                    <TextInput
-                                        id="Display-name"
-                                        label="Display Name"
-                                        placeholder={user?.displayName===null ? "placeholder" : user?.displayName}
-                                        {...nameForm.getInputProps('name')}
-                                    />
-                                </div>
-                            
-                                <div className="hover:bg-blue-200 ml-auto">
-                                    <Button variant={"outline"} type="submit">Change Name</Button>
-                                </div>
-                            
-                            </Flex>
+                            <Group align="flex-end">
+                                <TextInput className="flex-1" label="Display name" placeholder="Your name" {...nameForm.getInputProps("name")}/>
+                                <Button type="submit" loading={savingName}>Save name</Button>
+                            </Group>
                         </form>
+                    </Paper>
 
-                        <form onSubmit={emailForm.onSubmit((values) => { 
-                            if (user != null) {
-                                updateEmail(user, values.email
-                                ).then(() => {
-                                    alert('New email is: ' + values.email);
-                                }).catch((error) => {
-                                    alert('Error assigning new email, ' + error);
-                                });
-                            }         
-                        })}>
-                            <Flex direction={"row"} align={"flex-end"} gap={"lg"}>
-                                <div className="">
-                                    <TextInput
-                                        id="Email-text-input"
-                                        label="Email"
-                                        placeholder={user?.email===null ? "placeholder" : user?.email}
-                                        {...emailForm.getInputProps('email')}
-                                    />
-                                </div>
-                        
-                                    <div className="hover:bg-blue-200 ml-auto place-center">
-                                        <Button variant={"outline"} type="submit">Change Email</Button>
-                                    </div>
-                            </Flex>
-                        </form>
+                    <Paper radius="md" withBorder p="lg">
+                        <Group mb="lg"><IconAt size={20}/><Title order={3}>Email address</Title></Group>
+                        {usesPassword ? (
+                            <form onSubmit={emailForm.onSubmit(async ({email}) => {
+                                setSavingEmail(true);
+                                try {
+                                    await updateEmail(user, email.trim());
+                                    toast.success("Email address updated");
+                                } catch (error) {
+                                    toast.error(error instanceof Error ? error.message : "Unable to update email address");
+                                } finally {
+                                    setSavingEmail(false);
+                                }
+                            })}>
+                                <Group align="flex-end">
+                                    <TextInput className="flex-1" label="Email" type="email" {...emailForm.getInputProps("email")}/>
+                                    <Button type="submit" loading={savingEmail}>Save email</Button>
+                                </Group>
+                            </form>
+                        ) : (
+                            <Text color="dimmed">Your email is managed by Google: {user.email}</Text>
+                        )}
+                    </Paper>
 
-                  
-                        {user.providerData[0]['providerId'] == 'password' && 
-                            <Button 
-                                onClick={() => {if (user?.email) {sendPasswordResetEmail(getAuth(), user.email)
-                                    .then(() => {
-                                      // Password reset email sent!
-                                      alert("Please check your email for instructions to reset your password.");
-                                    })
-                                    .catch((error) => {
-                                      const errorCode = error.code;
-                                      const errorMessage = error.message;
-                                      console.log("Error code: " + errorCode);
-                                    }); }
-                                    else {
-                                        console.log('No email found for this user - unable to change password.');
-                                    } }} 
-                                variant={"outline"} mt={4}>Change Password
-                            </Button>}
+                    <Paper radius="md" withBorder p="lg">
+                        <Group mb="xs"><IconKey size={20}/><Title order={3}>Security</Title></Group>
+                        <Text size="sm" color="dimmed" mb="lg">
+                            {usesPassword ? "Send password reset instructions to your email address." : "Password and sign-in security are managed by Google."}
+                        </Text>
+                        {usesPassword && (
+                            <Button variant="light" onClick={async () => {
+                                if (!user.email) return;
+                                try {
+                                    await sendPasswordResetEmail(getAuth(), user.email);
+                                    toast.success("Password reset email sent");
+                                } catch (error) {
+                                    toast.error(error instanceof Error ? error.message : "Unable to send reset email");
+                                }
+                            }}>Send password reset email</Button>
+                        )}
+                    </Paper>
 
+                    <Paper radius="md" withBorder p="lg" sx={{borderColor: "var(--mantine-color-red-5)"}}>
+                        <Title order={3} color="red">Danger zone</Title>
+                        <Text size="sm" color="dimmed" mt={4} mb="lg">Permanently delete your account and revoke access to Argonaut.</Text>
+                        <Button color="red" variant="light" leftIcon={<IconTrash size={16}/>} onClick={() => setDeleteOpened(true)}>Delete account</Button>
+                    </Paper>
+                </Stack>
+            </div>
 
-                        <DeleteAcctModal user={user} opened={opened} close={close}/>
-                        <Button onClick={open}
-                            variant={"light"} color={"red"}>Delete Account
-                        </Button>
-
-                    </Flex>
-
-                </Center>
-
-            </Paper>
-        
+            <DeleteAccountModal user={user} opened={deleteOpened} onClose={() => setDeleteOpened(false)}/>
         </div>
-             )
-}
-
-interface ModalProps {
-    opened: boolean, 
-    close: () => void,
-    user: User
-}
-
-function DeleteAcctModal({ opened, close, user }: ModalProps) {
-    return (
-      <>
-        <Modal opened={opened} onClose={close} size="auto" title="Account Removal">
-          <p>This action cannot be undone!</p>
-  
-          <Group mt="xl">
-            <Button variant="outline" 
-                    color={"red"} 
-                    onClick={() =>  { 
-                        if (user != null) {
-                            deleteUser(user
-                            ).then(() => {
-                                alert('Account has been deleted for: ' + user.displayName);
-                            }).catch((error) => {
-                                alert('Error deleting account: ' + error);
-                            });
-                        }
-                        close()
-                    }}>
-              Yes
-            </Button>
-            <Button 
-                variant="outline" 
-                onClick={close}>
-                I changed my mind
-            </Button>
-          </Group>
-        </Modal>
-      </>
     );
-  }
+}
+
+function DeleteAccountModal({user, opened, onClose}: {user: User; opened: boolean; onClose: () => void}) {
+    return (
+        <Modal opened={opened} onClose={onClose} title="Delete account?" centered>
+            <Text>This permanently deletes your authentication account. This action cannot be undone.</Text>
+            <Group position="right" mt="xl">
+                <Button variant="default" onClick={onClose}>Cancel</Button>
+                <Button color="red" onClick={async () => {
+                    try {
+                        await deleteUser(user);
+                        toast.success("Account deleted");
+                        onClose();
+                    } catch (error) {
+                        toast.error(error instanceof Error ? error.message : "Unable to delete account");
+                    }
+                }}>Delete account</Button>
+            </Group>
+        </Modal>
+    );
+}

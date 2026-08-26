@@ -1,88 +1,78 @@
 "use client";
-import { useAuth } from "@/app/context";
-import { useState } from "react";
-import { useGoals, addNewGoal } from "@/lib/firebase";
-import { Goal } from "@/lib/Interfaces"
-import GoalCard from "@/components/GoalCard";
 
-import { Grid, Card, Flex, Button, Color, Select, SelectItem } from "@tremor/react";
-import {useMantineColorScheme} from "@mantine/core";
-
+import {useMemo, useState} from "react";
+import {Button, Group, Modal, Select, Text, Title, useMantineTheme} from "@mantine/core";
+import {IconPlus} from "@tabler/icons-react";
+import toast from "react-hot-toast";
+import {useAuth} from "@/app/context";
+import Loading from "@/app/loading";
 import AddGoalForm from "@/components/AddEditGoalForm";
+import GoalCard from "@/components/GoalCard";
+import LoginMantine from "@/components/LoginMantine";
+import {addNewGoal, useGoals} from "@/lib/firebase";
 
-function sortByAmt(a: Goal, b: Goal) {
-    return a.amt_goal < b.amt_goal ? -1 : 1;
-}
+type SortOption = "date" | "name" | "amount";
 
-function sortByName(a: Goal, b: Goal) {
-    return a.goal_name < b.goal_name ? -1 : 1;
-}
-
-function sortByDate(a: Goal, b: Goal) {
-    return a.goal_date < b.goal_date ? -1 : 1;
-}
-
-export default function Page () {
+export default function GoalsPage() {
     const {user, loading} = useAuth();
-    const {colorScheme} = useMantineColorScheme();
+    const {colorScheme} = useMantineTheme();
+    const goals = useGoals(user);
+    const [formOpened, setFormOpened] = useState(false);
+    const [sortBy, setSortBy] = useState<SortOption>("date");
 
-    const goals: Goal[] | null = useGoals(user);
+    const sortedGoals = useMemo(() => [...(goals ?? [])].sort((a, b) => {
+        if (sortBy === "name") return a.goal_name.localeCompare(b.goal_name);
+        if (sortBy === "amount") return a.amt_goal - b.amt_goal;
+        return new Date(a.goal_date).getTime() - new Date(b.goal_date).getTime();
+    }), [goals, sortBy]);
 
-    const [showForm, setShowForm] = useState(false);
-    const colors = ["amber", "indigo", "violet", "rose", "cyan"];
-    const [sortFn, setSortFn] = useState('date')
+    if (loading) return <Loading/>;
+    if (!user) return <LoginMantine/>;
 
     return (
-        <div className={colorScheme == "dark" ? "dark" : ""}>
-            <p>Goals Page</p>
-
-            <Flex flexDirection="row" className="w-1/3 justify-self-end">
-                <p>Sort By</p>
-                <Select value={sortFn} onValueChange={setSortFn} enableClear={false} >
-                    <SelectItem value='date'>
-                    Date
-                    </SelectItem>
-                    <SelectItem value='name'>
-                    Goal Name
-                    </SelectItem>
-                    <SelectItem value='amount'>
-                    Goal Amount
-                    </SelectItem>
-                </Select>
-            </Flex>
-
-            <Grid numItems={1} numItemsMd={2} numItemsLg={3} className="gap-2 p-2">
-                {goals && goals.sort(sortFn === 'date' ? sortByDate : sortFn === 'name' ? sortByName : sortByAmt)
-                .map((goal: Goal, idx: number) => {
-                    return (
-                        <GoalCard
-                            user={user}
-                            goal={goal}
-                            idx={idx}
-                            savedColor={colors[idx % colors.length] as Color}/>
-                    )
-                })}
-
-                {/* Add new goal button and form toggle */}
-                { showForm 
-                ? <Card className="max-w-lg py-2">
-                    <AddGoalForm 
-                        onFormClose={() => setShowForm(false)}
-                        onAddGoal={(name, amt, date) => addNewGoal(user, name, amt, date)}
-                        onEditGoal={() => {}}
-                        />
-                    </Card>
-                : <Card className="h-80">
-                    <Flex justifyContent="center" className="h-full">
-                        <Button 
-                            size="lg"
-                            onClick={() => setShowForm (true)}>
-                            Add New Goal
-                        </Button> 
-                    </Flex>
-                </Card>}
-            </Grid>
+        <div className={`p-6 ${colorScheme === "dark" ? "text-white" : "text-slate-900"}`}>
+            <Group position="apart" align="flex-start" mb="xl">
+                <div>
+                    <Title order={1}>Goals</Title>
+                    <Text color="dimmed">Turn long-term plans into measurable savings targets.</Text>
+                </div>
+                <Group>
+                    <Select
+                        aria-label="Sort goals"
+                        value={sortBy}
+                        onChange={(value) => setSortBy((value as SortOption | null) ?? "date")}
+                        data={[
+                            {value: "date", label: "Target date"},
+                            {value: "name", label: "Goal name"},
+                            {value: "amount", label: "Goal amount"},
+                        ]}
+                    />
+                    <Button leftIcon={<IconPlus size={18}/>} onClick={() => setFormOpened(true)}>Add goal</Button>
+                </Group>
+            </Group>
+            {goals === null ? (
+                <Loading/>
+            ) : sortedGoals.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-10 text-center">
+                    <Title order={3}>No savings goals yet</Title>
+                    <Text color="dimmed" mt="xs" mb="md">Create a goal and start tracking your progress.</Text>
+                    <Button leftIcon={<IconPlus size={18}/>} onClick={() => setFormOpened(true)}>Add your first goal</Button>
+                </div>
+            ) : (
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {sortedGoals.map((goal) => <GoalCard key={goal.id} user={user} goal={goal}/>) }
+                </div>
+            )}
+            <Modal opened={formOpened} onClose={() => setFormOpened(false)} title="Add savings goal" centered>
+                <AddGoalForm
+                    onFormClose={() => setFormOpened(false)}
+                    onAddGoal={async (name, amount, date) => {
+                        await addNewGoal(user, name, amount, date);
+                        toast.success(`${name} added`);
+                    }}
+                    onEditGoal={() => undefined}
+                />
+            </Modal>
         </div>
     );
 }
-

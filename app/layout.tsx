@@ -29,13 +29,22 @@ export default function RootLayout({
 
 
     const [colorScheme, setColorScheme] = useState<ColorScheme>('light');
-    const toggleColorScheme = (value?: ColorScheme) =>
-        setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
+    const toggleColorScheme = (value?: ColorScheme) => {
+        const nextColorScheme = value || (colorScheme === 'dark' ? 'light' : 'dark');
+        setColorScheme(nextColorScheme);
+        if (typeof window !== "undefined") {
+            window.localStorage.setItem("argonaut-color-scheme", nextColorScheme);
+        }
+    };
 
     const [collapsed, setCollapsed] = useState(false);
     // set collapsed to initially true if on mobile (or any small screen)
     useEffect(() => {
         setCollapsed(window.innerWidth < 640)
+        const savedColorScheme = window.localStorage.getItem("argonaut-color-scheme");
+        if (savedColorScheme === "light" || savedColorScheme === "dark") {
+            setColorScheme(savedColorScheme);
+        }
     }, [])
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
