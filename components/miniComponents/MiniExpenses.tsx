@@ -9,6 +9,7 @@ import {Button, rem} from "@mantine/core";
 import ComponentFrameCenter from "@/components/layouts/ComponentFrameCenter";
 import {ColumnDef} from "@tanstack/react-table";
 import {ArrowUpDown} from "lucide-react";
+import Loading from "@/app/loading";
 
 const columns: ColumnDef<Expense>[] = [
     {
@@ -123,11 +124,7 @@ export default function MiniExpenses() {
     const PRIMARY_COL_HEIGHT = rem(400);
     const expenses = useExpenses(user);
     if (loading) {
-        return (
-            <>
-                Loading...
-            </>
-        )
+        return <Loading/>
     }
     return (
         <>

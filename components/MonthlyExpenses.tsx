@@ -10,6 +10,8 @@ import {addOrUpdateExpense, deactivateRecurringExpense, useExpenses} from "@/lib
 import {useAuth} from "@/app/context";
 import {debounce} from "lodash"
 import {useMantineTheme} from "@mantine/core";
+import toast from "react-hot-toast";
+import Loading from "@/app/loading";
 
 interface MonthlyExpensesProps {
     width?: string;
@@ -48,7 +50,7 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
     // }, [user])
 
     // TODO replace with custom loading skeleton
-    if (loading) return <div>Loading...</div>
+    if (loading) return <Loading/>
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>, field: string) => {
         const value = field === 'amount' ? parseFloat(e.target.value) : e.target.value;
@@ -92,9 +94,12 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                 expAsClass.recurringExpenseID = exp.recurringExpenseID;
                 expAsClass.recurrenceActive = exp.recurrenceActive;
                 
-                await addOrUpdateExpense(user, expAsClass).then(() => {
-                    console.log("Expense updated: ", updatedExpenses[expenseIndex])
-                });
+                try {
+                    await addOrUpdateExpense(user, expAsClass);
+                    toast.success("Monthly expense updated");
+                } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Unable to update expense");
+                }
             }
         }
 
@@ -108,7 +113,12 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
 
     const stopRecurrence = async (expense: Expense) => {
         if (!expense.recurringExpenseID) return;
-        await deactivateRecurringExpense(user, expense);
+        try {
+            await deactivateRecurringExpense(user, expense);
+            toast.success("Future occurrences stopped");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Unable to stop recurrence");
+        }
     };
 
 
@@ -125,8 +135,17 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
             true // is_monthly,
         )
 
-        // const newExpense = _newExpense.toJson();
-        await addOrUpdateExpense(user, _newExpense, true)
+        if (!_newExpense.name.trim() || !_newExpense.categoryID || _newExpense.amount <= 0) {
+            toast.error("Enter a name, category, and amount greater than zero");
+            return;
+        }
+        try {
+            await addOrUpdateExpense(user, _newExpense, true)
+            toast.success("Monthly expense added");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Unable to add monthly expense");
+            return;
+        }
 
 
         // setCurrentExpenses([...currentExpenses, newExpense]);

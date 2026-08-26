@@ -314,6 +314,7 @@ export async function addOrUpdateExpense(user: User | null, expense: ExpenseClas
             
         } catch (e) {
             console.error("Error adding document: ", e);
+            throw e;
         }
     }
 }
@@ -775,6 +776,7 @@ export async function addNewGoal(user: User | null, goal_name: string, amt_goal:
             await setDoc(doc(goalsRef, new_goal.id), new_goal.toJson());
         } catch (error) {
             console.log("Error adding goal: ", error)
+            throw error;
         }
     } else {
         throw new Error("User not found (adding new goal)")
@@ -795,6 +797,7 @@ export async function editGoal(user: User | null, goal: Goal) {
             await setDoc(goalRef, goal);
         } catch (error) {
             console.log("Error editing goal: ", goal.goal_name, error)
+            throw error;
         }
     } else {
         throw new Error("User not found (editing goal)")
@@ -815,6 +818,7 @@ export async function deleteGoal(user: User | null, goalID: string) {
             await deleteDoc(goalRef);
         } catch (error) {
             console.log("Error editing goal: ", goalID, error)
+            throw error;
         }
     } else {
         throw new Error("User not found (deleting goal)")

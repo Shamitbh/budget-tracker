@@ -6,6 +6,7 @@ import {ExpenseClass} from "@/lib/Interfaces";
 import {CategoryPicker} from "@/components/CategoryPicker";
 import {useAuth} from "@/app/context";
 import {addOrUpdateExpense} from "@/lib/firebase";
+import Loading from "@/app/loading";
 
 export default function AddNewExpense() {
     const {user, loading} = useAuth();
@@ -34,7 +35,7 @@ export default function AddNewExpense() {
         form.setFieldValue('category', category);
     }
     if (loading){
-        return <div>Loading...</div>
+        return <Loading/>
     }
 
     return (

@@ -28,11 +28,7 @@ export function CategoryPicker({onCategoryChange, dropdownPosition, ...restProps
             .catch(console.error);
     }, [user])
     if (loading) {
-        return (
-            <>
-                Loading...
-            </>
-        )
+        return <Select data={[]} placeholder="Loading categories…" disabled/>;
     }
     return (
         <Select data={data}

@@ -72,6 +72,7 @@ function AddExpenseForm({month, year}: {month?: number; year?: number}) {
     const nameRef = useRef<HTMLInputElement>(null);
     const priceRef = useRef<HTMLInputElement>(null);
     const [category, setCategory] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
     const handleCategoryChange = (category: string) => {
         setCategory(category);
@@ -121,7 +122,8 @@ function AddExpenseForm({month, year}: {month?: number; year?: number}) {
 
                 <div className={""}>
                     <Button
-                        onClick={() => {
+                        loading={submitting}
+                        onClick={async () => {
                             if (nameRef.current?.value == "") {
                                 toast.error("Please enter a name")
                                 return;
@@ -130,8 +132,6 @@ function AddExpenseForm({month, year}: {month?: number; year?: number}) {
                                 toast.error("Please choose a category")
                                 return;
                             }
-
-                            toast.success("Added expense: " + priceRef.current?.value + " to " + category)
 
                             // first, make expense class
                             const priceString = priceRef.current?.value.replace(/\$|,/g, ''); // Remove the dollar sign and comma
@@ -149,9 +149,22 @@ function AddExpenseForm({month, year}: {month?: number; year?: number}) {
                                 month ?? today.getMonth() + 1,
                                 year ?? today.getFullYear(),
                             )
-                            addOrUpdateExpense(user, expense).then(() => {
-                                console.log("Expense added: ", expense)
-                            })
+                            if (price <= 0) {
+                                toast.error("Expense amount must be greater than zero");
+                                return;
+                            }
+                            setSubmitting(true);
+                            try {
+                                await addOrUpdateExpense(user, expense);
+                                toast.success(`Added ${expense.name}`);
+                                if (nameRef.current) nameRef.current.value = "";
+                                if (priceRef.current) priceRef.current.value = "";
+                                setCategory("");
+                            } catch (error) {
+                                toast.error(error instanceof Error ? error.message : "Unable to add expense");
+                            } finally {
+                                setSubmitting(false);
+                            }
 
                         }}
                         variant={"outline"}
