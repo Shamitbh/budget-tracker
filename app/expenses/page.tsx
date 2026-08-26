@@ -23,6 +23,8 @@ export default function Page() {
 
     const {user, loading} = useAuth();
     const expenses: Expense[] = useExpenses(user, false, currentDate.month, currentDate.year);
+    const now = new Date();
+    const isCurrentMonth = currentDate.month === now.getMonth() + 1 && currentDate.year === now.getFullYear();
 
     const {colorScheme} = useMantineTheme();
     if (loading) return <LoadingTable/>
@@ -37,6 +39,8 @@ export default function Page() {
                     <div className={"text-2xl font-bold"}>
                         <Button
                             variant={"outline"}
+                            aria-label="Next month"
+                            disabled={isCurrentMonth}
                             onClick={
                                 () => {
                                     const newYear = currentDate.month === 1 ? currentDate.year - 1 : currentDate.year;
@@ -74,7 +78,6 @@ export default function Page() {
                             }
                         >
                             <IconArrowBigRight/>
-                            {/*    TODO this should change the month back and forth*/}
                         </Button>
                     </div>
                 </div>
@@ -97,7 +100,7 @@ export default function Page() {
                         </div>
                         <div className="p-1">
 
-                            <AddExpensePopover/>
+                            <AddExpensePopover month={currentDate.month} year={currentDate.year}/>
                         </div>
 
                     </div>
@@ -108,7 +111,7 @@ export default function Page() {
                     </div>
                 </Tabs.Panel>
                 <Tabs.Panel value={"monthly"} pt={"xs"}>
-                    <MonthlyExpenses/>
+                    <MonthlyExpenses month={currentDate.month} year={currentDate.year}/>
                 </Tabs.Panel>
             </Tabs>
 

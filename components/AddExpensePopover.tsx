@@ -10,10 +10,12 @@ import {addOrUpdateExpense} from "@/lib/firebase";
 import {useAuth} from "@/app/context";
 
 interface AddExpensePopoverProps {
-    heightClass?: string
+    heightClass?: string;
+    month?: number;
+    year?: number;
 }
 
-export default function AddExpensePopover({heightClass}: AddExpensePopoverProps) {
+export default function AddExpensePopover({heightClass, month, year}: AddExpensePopoverProps) {
     const {colorScheme} = useMantineColorScheme();
     const height = heightClass ? heightClass : `h-[48px]`;
     return (
@@ -32,7 +34,7 @@ export default function AddExpensePopover({heightClass}: AddExpensePopoverProps)
                     <PopoverContent
                         className={`${colorScheme == 'dark' ? "bg-black border-gray-700 shadow-2xl" : ""} `}
                     >
-                        <AddExpenseForm/>
+                        <AddExpenseForm month={month} year={year}/>
                     </PopoverContent>
                 </Popover>
 
@@ -60,7 +62,7 @@ export default function AddExpensePopover({heightClass}: AddExpensePopoverProps)
     )
 }
 
-function AddExpenseForm() {
+function AddExpenseForm({month, year}: {month?: number; year?: number}) {
     const {user} = useAuth();
     const {colorScheme} = useMantineTheme();
     const darkModeClass = `${colorScheme == 'dark' ? "text-white" : ""} `
@@ -138,7 +140,15 @@ function AddExpenseForm() {
 
                             // TODO: way to have default date (today) as ExpenseClass default?
                             const today = new Date();
-                            const expense = new ExpenseClass(nameRef.current!.value, category, price, "", "", today.getMonth() + 1, today.getFullYear())
+                            const expense = new ExpenseClass(
+                                nameRef.current!.value,
+                                category,
+                                price,
+                                "",
+                                "",
+                                month ?? today.getMonth() + 1,
+                                year ?? today.getFullYear(),
+                            )
                             addOrUpdateExpense(user, expense).then(() => {
                                 console.log("Expense added: ", expense)
                             })

@@ -14,9 +14,11 @@ import {useMantineTheme} from "@mantine/core";
 interface MonthlyExpensesProps {
     width?: string;
     height?: string;
+    month?: number;
+    year?: number;
 }
 
-export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = {width: "w-full", height: "h-full"}) {
+export default function MonthlyExpenses({width = "w-full", height = "h-full", month, year}: MonthlyExpensesProps) {
     const {colorScheme} = useMantineTheme();
     const initialExpenseRow = {
         name: "",
@@ -29,7 +31,7 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
     const [newExpenseRow, setNewExpenseRow] = useState(initialExpenseRow);
     const {user, loading} = useAuth();
 
-    const currentExpenses: Expense[] = useExpenses(user, true);
+    const currentExpenses: Expense[] = useExpenses(user, true, month, year);
 
     // TODO: Too many hooks or re-renders below
     // Updating from MonthlyExpenses is commented out for now
@@ -118,8 +120,8 @@ export default function MonthlyExpenses({width, height}: MonthlyExpensesProps = 
             newExpenseRow.amount,
             newExpenseRow.description,
             "", // vendor
-            today.getMonth() + 1,
-            today.getFullYear(),
+            month ?? today.getMonth() + 1,
+            year ?? today.getFullYear(),
             true // is_monthly,
         )
 
