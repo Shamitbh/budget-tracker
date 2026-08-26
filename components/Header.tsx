@@ -19,7 +19,7 @@ export default function Header({onCollapse}: Props) {
   return(
     <header className={`sticky self-start top-0 w-full flex flex-row px-6 py-3 gap-3 border-b items-center ${colorScheme == 'dark' ? "bg-slate-800 border-slate-600" : "bg-slate-100"} z-20`}>
         {user && (
-            <button className="cursor-pointer items-center rounded p-1" onClick={onCollapse} aria-label="Toggle navigation">
+            <button className="cursor-pointer items-center rounded p-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500" onClick={onCollapse} aria-label="Toggle navigation">
                 <IconMenu2 color={colorScheme === 'dark' ? 'white' : 'gray'}/>
             </button>
         )}

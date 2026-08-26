@@ -20,10 +20,11 @@ export default function IconPickerPopover({selectedIconName, onIconSelect, categ
             <PopoverTrigger asChild>
                 <button
                     type="button"
+                    aria-label="Choose category icon"
                     style = {{
                         zIndex: zIndex
                     }}
-                    className={"bg-gray-100 p-1 rounded-lg hover:bg-gray-200"}
+                    className={"bg-gray-100 p-1 rounded-lg hover:bg-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"}
                 >
                     {selectedIconName ? selectedIconFound?.component : icons.find(icon => icon.name === selectedIcon)?.component}
 

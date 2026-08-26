@@ -39,8 +39,7 @@ export default function Page() {
                     <div className={"text-2xl font-bold"}>
                         <Button
                             variant={"outline"}
-                            aria-label="Next month"
-                            disabled={isCurrentMonth}
+                            aria-label="Previous month"
                             onClick={
                                 () => {
                                     const newYear = currentDate.month === 1 ? currentDate.year - 1 : currentDate.year;
@@ -64,6 +63,8 @@ export default function Page() {
                     <div className={"text-2xl font-bold"}>
                         <Button
                             variant={"outline"}
+                            aria-label="Next month"
+                            disabled={isCurrentMonth}
                             onClick={() => {
                                 const newYear = currentDate.month === 12 ? currentDate.year + 1 : currentDate.year;
                                 const newMonth = currentDate.month === 12 ? 1 : currentDate.month + 1;

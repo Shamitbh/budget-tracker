@@ -11,6 +11,7 @@ export default function ThemeSwitcher() {
             color={dark ? "blue" : "yellow"}
             onClick={() => toggleColorScheme()}
             title={"Toggle color scheme"}
+            aria-label={dark ? "Use light color scheme" : "Use dark color scheme"}
         >
             {dark ? <IconMoonStars size="1.1rem"/> : <IconSun size="1.1rem"/>}
 

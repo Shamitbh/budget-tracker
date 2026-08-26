@@ -172,6 +172,7 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                         className={"mr-16"}
                         variant={"secondary"}
                         size={"sm"}
+                        aria-label={showForm ? "Close monthly expense form" : "Add monthly expense"}
                         onClick={showForm ? toggleForm : toggleForm}
                     >
                         <IconPlus/>
@@ -262,6 +263,8 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                             </TableCell>
                             <TableCell className={"text-center "}>
                                 <button
+                                    type="button"
+                                    aria-label="Save monthly expense"
                                     className={"pr-2 pl-2 pb-1"}
                                     onClick={handleSubmit}
                                 >

@@ -22,13 +22,15 @@ export default function AddExpensePopover({heightClass, month, year}: AddExpense
         <>
             <div className={"flex"}>
                 <Popover>
-                    <PopoverTrigger>
-                        <div
+                    <PopoverTrigger asChild>
+                        <button
+                            type="button"
+                            aria-label="Add expense"
                             className={`${height} + w-[50px] hover:shadow hover:bg-blue-400 rounded-l-2xl  p-3 bg-blue-500 font-semibold text-white`}
                         >
                             New
 
-                        </div>
+                        </button>
 
                     </PopoverTrigger>
                     <PopoverContent
@@ -40,15 +42,16 @@ export default function AddExpensePopover({heightClass, month, year}: AddExpense
 
 
                 <Popover>
-                    <PopoverTrigger>
-
-                        <div
+                    <PopoverTrigger asChild>
+                        <button
+                            type="button"
+                            aria-label="Open quick expense actions"
                             className={`${height} + hover:shadow w-[30px]  pl-1 rounded-r-2xl bg-blue-500 hover:bg-blue-400 text-white pt-3.5`}
                         >
                             <IconChevronDown
                                 size={20}
                             />
-                        </div>
+                        </button>
                     </PopoverTrigger>
                     <PopoverContent>
 
