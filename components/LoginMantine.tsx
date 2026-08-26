@@ -15,12 +15,14 @@ import {
     updateProfile,
 } from "firebase/auth";
 import toast from "react-hot-toast";
+import {useRouter} from "next/navigation";
 
 import {useAuth} from "@/app/context";
 import {auth, ensureUserInDatabase, saveUserToDatabase} from "@/lib/firebase";
 
 export default function LoginMantine(props: PaperProps) {
     const {continueAsGuest} = useAuth();
+    const router = useRouter();
     const [type, toggle] = useToggle(["login", "register"]);
     const [resetOpened, {open: openReset, close: closeReset}] = useDisclosure(false);
     const [submitting, setSubmitting] = useState(false);
@@ -37,6 +39,7 @@ export default function LoginMantine(props: PaperProps) {
         try {
             const result = await signInWithPopup(auth, new GoogleAuthProvider());
             await ensureUserInDatabase(result.user);
+            router.replace("/");
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Unable to sign in with Google");
         }
@@ -50,9 +53,11 @@ export default function LoginMantine(props: PaperProps) {
                 await updateProfile(result.user, {displayName: values.name.trim()});
                 await saveUserToDatabase(result.user);
                 toast.success("Your account is ready");
+                router.replace("/");
             } else {
                 const result = await signInWithEmailAndPassword(auth, values.email, values.password);
                 await ensureUserInDatabase(result.user);
+                router.replace("/");
             }
         } catch (error) {
             toast.error(error instanceof Error ? error.message : `Unable to ${type}`);
@@ -89,7 +94,10 @@ export default function LoginMantine(props: PaperProps) {
             </form>
 
             <Divider label="or explore first" labelPosition="center" my="lg"/>
-            <Button fullWidth variant="light" leftIcon={<IconCompass size={18}/>} onClick={continueAsGuest}>Continue as guest</Button>
+            <Button fullWidth variant="light" leftIcon={<IconCompass size={18}/>} onClick={() => {
+                continueAsGuest();
+                router.replace("/");
+            }}>Continue as guest</Button>
             <Text size="xs" color="dimmed" align="center" mt="sm">Try the app with sample data. Guest changes disappear when this tab closes.</Text>
 
             <ForgotPasswordModal opened={resetOpened} onClose={closeReset}/>

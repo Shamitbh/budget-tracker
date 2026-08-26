@@ -1,27 +1,24 @@
 'use client';
-import {Button, Container, Text, Title} from '@mantine/core';
+import {useEffect} from "react";
+import {Container} from '@mantine/core';
+import {useRouter} from "next/navigation";
 import LoginMantine from "@/components/LoginMantine";
 import {useAuth} from "@/app/context";
+import Loading from "@/app/loading";
 
 export default function Login() {
-    const {user, isGuest, signOut} = useAuth();
-    if (user) {
-        return (
-            <Container size="xs" py="xl">
-                <Title order={2}>{isGuest ? "You’re exploring as a guest" : `Welcome, ${user.displayName || "back"}`}</Title>
-                <Text color="dimmed" mt="sm" mb="lg">
-                    {isGuest ? "Your demo changes are kept only in this browser tab." : "You’re already signed in to Budget Tracker."}
-                </Text>
-                <Button variant="outline" onClick={() => void signOut()}>{isGuest ? "Exit demo" : "Sign out"}</Button>
-            </Container>
-        )
-    } else {
-        return (
-            <Container
-                my={"md"}
-            >
-                <LoginMantine/>
-            </Container>
-        )
-    }
+    const {user, loading} = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loading && user) router.replace("/");
+    }, [loading, router, user]);
+
+    if (loading || user) return <Loading/>;
+
+    return (
+        <Container my="md">
+            <LoginMantine/>
+        </Container>
+    );
 }
