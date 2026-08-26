@@ -7,7 +7,6 @@ import {ThreeColumnLayout} from "@/components/layouts/ThreeColumnLayout";
 import {useCategories, useSummary} from "@/lib/firebase";
 import {Category, MonthSummary} from "@/lib/Interfaces";
 
-import LoginMantine from "@/components/LoginMantine";
 import Loading from "@/app/loading";
 import ComponentFrameCenter from "@/components/layouts/ComponentFrameCenter";
 import BudgetCard from "@/components/BudgetCard";
@@ -15,6 +14,7 @@ import BudgetCard from "@/components/BudgetCard";
 import LoadingAtAGlance from "@/components/layouts/LoadingAtAGlance";
 import MiniExpenses from "@/components/miniComponents/MiniExpenses";
 import MonthlyExpenses from "@/components/MonthlyExpenses";
+import LandingPage from "@/components/LandingPage";
 
 const PRIMARY_COL_HEIGHT = rem(400);
 
@@ -29,7 +29,7 @@ export default function Home() {
     }
 
     if (!user) {
-        return <LoginMantine/>;
+        return <LandingPage/>;
     }
 
 

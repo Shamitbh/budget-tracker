@@ -32,6 +32,7 @@ import {
 } from "@/lib/Interfaces";
 import {useEffect, useState} from "react";
 import {Timestamp} from "@firebase/firestore";
+import {getGuestData, getGuestSummary, isGuestUser, subscribeToGuestData, updateGuestData} from "@/lib/guestData";
 // TODO add react-query-firebase to handle caching and offline data
 
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -168,6 +169,13 @@ export function useCategories(user: User | null): Category[] | null {
     const [categories, setCategories] = useState<Category[] | null>(null);
 
     useEffect(() => {
+        if (isGuestUser(user)) {
+            const refresh = () => setCategories(getGuestData().categories
+                .filter((category) => !category.is_deleted)
+                .sort((a, b) => a.name.localeCompare(b.name)));
+            refresh();
+            return subscribeToGuestData(refresh);
+        }
         if (user) {
             const db = getFirestore();
             const userRef = doc(db, usersDirectory, user.uid);
@@ -197,6 +205,23 @@ export async function addOrUpdateExpense(user: User | null, expense: ExpenseClas
     // TODO update. Should be `addOrUpdateExpense` and handle both cases
     // this function sends an expense to firebase
     // this function is not reactive. It is used to send a single expense to firebase
+    if (isGuestUser(user)) {
+        const recurringExpenseID = expense.recurringExpenseID ?? (createRecurrence ? expense.id : undefined);
+        const expenseID = createRecurrence ? createRecurringOccurrenceID(recurringExpenseID!, expense.month, expense.year) : expense.id;
+        const guestExpense: Expense = {
+            ...expense.toJson(),
+            id: expenseID,
+            date: expense.date instanceof Date ? expense.date : new Date(),
+            ...(recurringExpenseID ? {recurringExpenseID, recurrenceActive: true} : {}),
+        };
+        updateGuestData((data) => ({
+            ...data,
+            expenses: data.expenses.some((item) => item.id === expenseID)
+                ? data.expenses.map((item) => item.id === expenseID ? guestExpense : item)
+                : [...data.expenses, guestExpense],
+        }));
+        return;
+    }
     if (user?.uid) {
         const db: Firestore = getFirestore();
         try {
@@ -297,6 +322,12 @@ export async function deactivateRecurringExpense(user: User | null, expense: Exp
     if (!user) throw new Error("User not found");
     if (!expense.recurringExpenseID) throw new Error("Expense is not recurring");
 
+    if (isGuestUser(user)) {
+        updateGuestData((data) => ({...data, expenses: data.expenses.map((item) =>
+            item.id === expense.id ? {...item, recurrenceActive: false} : item)}));
+        return;
+    }
+
     const db = getFirestore();
     const recurringRef = doc(db, usersDirectory, user.uid, "RecurringExpenses", expense.recurringExpenseID);
     const expenseRef = doc(db, usersDirectory, user.uid, "Months", createMonthYearString(expense.month, expense.year), "Expenses", expense.id);
@@ -332,6 +363,7 @@ export async function materializeRecurringExpenses(
     year: number = new Date().getFullYear(),
 ): Promise<void> {
     if (!user) return;
+    if (isGuestUser(user)) return;
 
     const db = getFirestore();
     const recurringSnapshot = await getDocs(collection(db, usersDirectory, user.uid, "RecurringExpenses"));
@@ -384,6 +416,12 @@ export async function getMonthSummary(user: User | null, month?: string): Promis
      The summary is expected to be stored in a specific path based
      on the user's unique identifier (UID) and the current month.
      */
+    if (isGuestUser(user)) {
+        const [monthNumber, yearNumber] = month
+            ? month.split("_").map(Number)
+            : [new Date().getMonth() + 1, new Date().getFullYear()];
+        return getGuestSummary(monthNumber, yearNumber);
+    }
     if (user?.uid) {
         const db = getFirestore();
 
@@ -418,6 +456,14 @@ export async function addCategory(user: User | null, category: Category): Promis
         throw new Error("Category budget must be a non-negative number");
     }
 
+    if (isGuestUser(user)) {
+        const duplicateExists = getGuestData().categories.some((existingCategory) =>
+            !existingCategory.is_deleted && existingCategory.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase());
+        if (duplicateExists) throw new Error(`A category named "${name}" already exists`);
+        updateGuestData((data) => ({...data, categories: [...data.categories, {...category, name, is_deleted: false}]}));
+        return;
+    }
+
     const db = getFirestore();
     const categoriesRef = collection(db, usersDirectory, user.uid, "Categories");
     const categoriesSnapshot = await getDocs(categoriesRef);
@@ -445,6 +491,12 @@ export async function updateCategory(user: User | null, categoryID: string, upda
         throw new Error("Category budget must be a non-negative number");
     }
 
+    if (isGuestUser(user)) {
+        updateGuestData((data) => ({...data, categories: data.categories.map((category) =>
+            category.categoryID === categoryID ? {...category, ...updates} : category)}));
+        return;
+    }
+
     const db = getFirestore();
     const categoryRef = doc(db, usersDirectory, user.uid, "Categories", categoryID);
     await updateDoc(categoryRef, updates);
@@ -453,6 +505,12 @@ export async function updateCategory(user: User | null, categoryID: string, upda
 export async function deleteCategory(user: User | null, categoryID: string): Promise<void> {
     if (!user) {
         throw new Error("User not found");
+    }
+
+    if (isGuestUser(user)) {
+        updateGuestData((data) => ({...data, categories: data.categories.map((category) =>
+            category.categoryID === categoryID ? {...category, is_deleted: true} : category)}));
+        return;
     }
 
     const db = getFirestore();
@@ -467,6 +525,11 @@ export async function changeCategoryIcon(user: User, iconName: string, categoryI
 export function useSummary(user: User | null, month?: number, year?: number): MonthSummary | undefined {
     const [summary, setSummary] = useState<MonthSummary>();
     useEffect(() => {
+        if (isGuestUser(user)) {
+            const refresh = () => setSummary(getGuestSummary(month, year));
+            refresh();
+            return subscribeToGuestData(refresh);
+        }
         if (user) {
             const db = getFirestore();
             const userRef = doc(db, usersDirectory, user.uid);
@@ -483,7 +546,7 @@ export function useSummary(user: User | null, month?: number, year?: number): Mo
                 unsubscribe();
             }
         } 
-    }, [user]);
+    }, [user, month, year]);
 
     // console.log("useSummary")
     return summary;
@@ -499,6 +562,18 @@ export function useExpenses(user: User | null,monthly?: boolean, month?: number,
 
 
     useEffect(() => {
+        if (isGuestUser(user)) {
+            const refresh = () => {
+                const targetMonth = month ?? new Date().getMonth() + 1;
+                const targetYear = year ?? new Date().getFullYear();
+                setExpenses(getGuestData().expenses
+                    .filter((expense) => !expense.is_deleted && expense.month === targetMonth && expense.year === targetYear)
+                    .filter((expense) => monthly ? expense.is_monthly : !expense.is_monthly)
+                    .sort((a, b) => guestDate(b.date).getTime() - guestDate(a.date).getTime()));
+            };
+            refresh();
+            return subscribeToGuestData(refresh);
+        }
         if (user) {
             const db = getFirestore();
             const userRef = doc(db, usersDirectory, user.uid);
@@ -551,6 +626,12 @@ export function useExpenses(user: User | null,monthly?: boolean, month?: number,
 // get function for analysis page
 // not a hook
 export async function getMonthMetadata(user: User | null, month?: number, year?: number): Promise<[Category[], MonthSummary]> {
+    if (isGuestUser(user)) {
+        return [
+            getGuestData().categories.filter((category) => !category.is_deleted),
+            getGuestSummary(month, year),
+        ];
+    }
     if (user) {
         const db = getFirestore();
         const userRef = doc(db, usersDirectory, user.uid);
@@ -580,6 +661,12 @@ export async function getMonthMetadata(user: User | null, month?: number, year?:
 // TODO: user document should no longer store category info
 export async function getUserCategories(user: User | null): Promise<string[]> {
     // get category names only (stored as part of User document)
+    if (isGuestUser(user)) {
+        return getGuestData().categories
+            .filter((category) => !category.is_deleted)
+            .map((category) => category.name)
+            .sort((a, b) => a.localeCompare(b));
+    }
     if (user?.uid) {
         const db = getFirestore();
 
@@ -622,6 +709,11 @@ export const useGoals = (user: User | null): Goal[] | null => {
     const [goals, setGoals] = useState<Goal[] | null>(null);
 
     useEffect(() => {
+        if (isGuestUser(user)) {
+            const refresh = () => setGoals(getGuestData().goals);
+            refresh();
+            return subscribeToGuestData(refresh);
+        }
         if (user) {
             const db = getFirestore();
             const goalsRef = collection(db, usersDirectory, user.uid, "Goals");
@@ -669,6 +761,11 @@ export const useGoals = (user: User | null): Goal[] | null => {
 
 export async function addNewGoal(user: User | null, goal_name: string, amt_goal: number, goal_date: Date) {
     if (user) {
+        if (isGuestUser(user)) {
+            const newGoal = new GoalClass(goal_name, amt_goal, goal_date).toJson();
+            updateGuestData((data) => ({...data, goals: [...data.goals, newGoal]}));
+            return;
+        }
         const db = getFirestore();
         const goalsRef = collection(db, usersDirectory, user.uid, "Goals");
 
@@ -686,6 +783,10 @@ export async function addNewGoal(user: User | null, goal_name: string, amt_goal:
 
 export async function editGoal(user: User | null, goal: Goal) {
     if (user) {
+        if (isGuestUser(user)) {
+            updateGuestData((data) => ({...data, goals: data.goals.map((item) => item.id === goal.id ? goal : item)}));
+            return;
+        }
         const db = getFirestore();
         const goalRef = doc(db, usersDirectory, user.uid, "Goals", goal.id);
 
@@ -702,6 +803,10 @@ export async function editGoal(user: User | null, goal: Goal) {
 
 export async function deleteGoal(user: User | null, goalID: string) {
     if (user) {
+        if (isGuestUser(user)) {
+            updateGuestData((data) => ({...data, goals: data.goals.filter((goal) => goal.id !== goalID)}));
+            return;
+        }
         const db = getFirestore();
         const goalRef = doc(db, usersDirectory, user.uid, "Goals", goalID);
 
@@ -739,6 +844,14 @@ export function useButtons(user: User | null): { buttons: CustomButton[], loadin
     const [loading, setLoading] = useState<boolean>(true); // Initialize loading state to true
 
     useEffect(() => {
+        if (isGuestUser(user)) {
+            const refresh = () => {
+                setButtons(getGuestData().buttons);
+                setLoading(false);
+            };
+            refresh();
+            return subscribeToGuestData(refresh);
+        }
         if (user) {
             setLoading(true); // Set loading to true when data fetch starts
 
@@ -769,6 +882,10 @@ export function useButtons(user: User | null): { buttons: CustomButton[], loadin
 
 export async function addButton(user: User | null, newButton: CustomButton) {
     if (user) {
+        if (isGuestUser(user)) {
+            updateGuestData((data) => ({...data, buttons: [...data.buttons, newButton]}));
+            return;
+        }
         const db = getFirestore();
         const userRef = doc(db, usersDirectory, user.uid);
         const userSnap = await getDoc(userRef);
@@ -784,4 +901,8 @@ export async function addButton(user: User | null, newButton: CustomButton) {
     } else {
         console.warn("User not found. `addButton` function failed.");
     }
+}
+
+function guestDate(value: Expense["date"]): Date {
+    return value instanceof Date ? value : new Date();
 }

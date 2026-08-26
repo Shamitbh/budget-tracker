@@ -1,54 +1,61 @@
-import { createContext, useEffect, useState, ReactNode } from 'react';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+"use client";
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
+import {createContext, ReactNode, useContext, useEffect, useMemo, useState} from "react";
+import {onAuthStateChanged, User} from "firebase/auth";
+import {auth} from "@/lib/firebase";
+import {clearGuestSession, GUEST_USER_ID, hasGuestSession, initializeGuestData, isGuestUser} from "@/lib/guestData";
 
 interface AuthContextValue {
-  user: User | null;
+    user: User | null;
+    loading: boolean;
+    isGuest: boolean;
+    continueAsGuest: () => void;
+    signOut: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
-//provider
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
+const guestUser = {
+    uid: GUEST_USER_ID,
+    displayName: "Guest",
+    email: null,
+    photoURL: null,
+    providerData: [],
+} as unknown as User;
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user) {
-        setUser(user);
-      } else {
-        setUser(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+export function AuthProvider({children}: {children: ReactNode}) {
+    const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
+    const [guest, setGuest] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-  return (
-    <AuthContext.Provider value={{ user }}>
-      {children}
-    </AuthContext.Provider>
-  );
+    useEffect(() => onAuthStateChanged(auth, (nextUser) => {
+        setFirebaseUser(nextUser);
+        if (!nextUser) setGuest(hasGuestSession());
+        setLoading(false);
+    }), []);
+
+    const value = useMemo<AuthContextValue>(() => ({
+        user: firebaseUser ?? (guest ? guestUser : null),
+        loading,
+        isGuest: guest,
+        continueAsGuest: () => {
+            initializeGuestData();
+            setGuest(true);
+        },
+        signOut: async () => {
+            if (firebaseUser) await auth.signOut();
+            clearGuestSession();
+            setGuest(false);
+        },
+    }), [firebaseUser, guest, loading]);
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user) {
-        setUser(user);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  return { user, loading };
+export function useAuth(): AuthContextValue {
+    const context = useContext(AuthContext);
+    if (!context) throw new Error("useAuth must be used within AuthProvider");
+    return context;
 }
+
+export {isGuestUser};

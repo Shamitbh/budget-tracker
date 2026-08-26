@@ -1,23 +1,19 @@
 'use client';
-import {Button, Container, rem} from '@mantine/core';
+import {Button, Container, Text, Title} from '@mantine/core';
 import LoginMantine from "@/components/LoginMantine";
 import {useAuth} from "@/app/context";
-import {auth} from "@/lib/firebase";
-
-const PRIMARY_COL_HEIGHT = rem(300);
 
 export default function Login() {
-    const {user, loading} = useAuth();
+    const {user, isGuest, signOut} = useAuth();
     if (user) {
         return (
-            <>
-                {/* @ts-ignore */}
-                Welcome {user.displayName}! You are logged in!
-
-                {/*// @ts-ignore*/}
-                <Button variant={"outline"}
-                        onClick={() => auth!.signOut()}>Sign out</Button>
-            </>
+            <Container size="xs" py="xl">
+                <Title order={2}>{isGuest ? "You’re exploring as a guest" : `Welcome, ${user.displayName || "back"}`}</Title>
+                <Text color="dimmed" mt="sm" mb="lg">
+                    {isGuest ? "Your demo changes are kept only in this browser tab." : "You’re already signed in to Argonaut."}
+                </Text>
+                <Button variant="outline" onClick={() => void signOut()}>{isGuest ? "Exit demo" : "Sign out"}</Button>
+            </Container>
         )
     } else {
         return (
@@ -29,5 +25,4 @@ export default function Login() {
         )
     }
 }
-
 

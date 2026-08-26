@@ -15,16 +15,18 @@ import {
     useMantineTheme,
 } from "@mantine/core";
 import {useForm} from "@mantine/form";
-import {IconAt, IconKey, IconTrash, IconUser} from "@tabler/icons-react";
+import {IconAt, IconCompass, IconKey, IconTrash, IconUser} from "@tabler/icons-react";
 import {deleteUser, getAuth, sendPasswordResetEmail, updateEmail, updateProfile, User} from "firebase/auth";
 import toast from "react-hot-toast";
+import {useRouter} from "next/navigation";
 
 import {useAuth} from "@/app/context";
 import Loading from "@/app/loading";
 import LoginMantine from "@/components/LoginMantine";
 
 export default function ProfilePage() {
-    const {user, loading} = useAuth();
+    const {user, loading, isGuest, signOut} = useAuth();
+    const router = useRouter();
     const {colorScheme} = useMantineTheme();
     const [deleteOpened, setDeleteOpened] = useState(false);
     const [savingName, setSavingName] = useState(false);
@@ -48,6 +50,32 @@ export default function ProfilePage() {
 
     if (loading) return <Loading/>;
     if (!user) return <LoginMantine/>;
+
+    if (isGuest) {
+        return (
+            <div className={`p-6 ${colorScheme === "dark" ? "text-white" : "text-slate-900"}`}>
+                <div className="mb-8">
+                    <Title order={1}>Profile</Title>
+                    <Text color="dimmed">You’re currently exploring Argonaut in guest mode.</Text>
+                </div>
+                <Paper radius="md" withBorder p="xl" maw={680}>
+                    <Group align="flex-start" noWrap>
+                        <Avatar size={64} radius={64} color="blue"><IconCompass size={30}/></Avatar>
+                        <div>
+                            <Title order={3}>Guest session</Title>
+                            <Text color="dimmed" mt={6}>
+                                You can use expenses, budgets, analysis, goals, and custom actions. Your changes stay in this browser tab and are never written to Firebase.
+                            </Text>
+                            <Button mt="lg" onClick={async () => {
+                                await signOut();
+                                router.push("/login");
+                            }}>Sign in or create an account</Button>
+                        </div>
+                    </Group>
+                </Paper>
+            </div>
+        );
+    }
 
     const usesPassword = user.providerData.some((provider) => provider.providerId === "password");
     const providerName = usesPassword ? "Email and password" : "Google";

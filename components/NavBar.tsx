@@ -14,9 +14,9 @@ import {
     IconPigMoney,
 } from '@tabler/icons-react';
 import {usePathname} from 'next/navigation'
-import {auth} from "@/lib/firebase";
 import NavItem from '@/components/NavItem';
 import {useMantineColorScheme} from "@mantine/core";
+import {useAuth} from "@/app/context";
 // import Link from 'next/link';
 // import ThemeSwitcher from "@/components/ThemeSwitcher";
 
@@ -36,6 +36,8 @@ interface Props {
 export default function NavBar({collapsed}: Props) {
   const pathname = usePathname();
   const {colorScheme} = useMantineColorScheme();
+  const {user, loading, isGuest, signOut} = useAuth();
+  if (!loading && !user) return null;
   // NOTE: seems like transitions work without setting animationCompleted?
 //   let animationDuration = 100;
 //   const [animationCompleted, setAnimationCompleted] = useState(true);
@@ -111,11 +113,10 @@ export default function NavBar({collapsed}: Props) {
             </div>
             
             <div onClick={() => {
-                auth!.signOut();
-                console.log("logged out");
+                void signOut();
             }}>
                 <NavItem
-                    name="Logout"
+                    name={isGuest ? "Exit demo" : "Logout"}
                     Icon={IconLogout}
                     href={"/login"}
                     isActive={pathname.startsWith("/debug")}

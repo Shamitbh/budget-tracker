@@ -8,7 +8,7 @@ import Loading from "@/app/loading";
 import LoginMantine from "@/components/LoginMantine";
 
 export default function SettingsPage() {
-    const {user, loading} = useAuth();
+    const {user, loading, isGuest} = useAuth();
     const {colorScheme, toggleColorScheme} = useMantineColorScheme();
 
     if (loading) return <Loading/>;
@@ -45,11 +45,11 @@ export default function SettingsPage() {
                             <ThemeIcon size="lg" variant="light"><IconUserCircle size={20}/></ThemeIcon>
                             <div>
                                 <Title order={3}>Account</Title>
-                                <Text size="sm" color="dimmed">Update your name, email, password, or account access.</Text>
-                                <Text size="sm" mt={6}>{user.email}</Text>
+                                <Text size="sm" color="dimmed">{isGuest ? "Demo changes last for this browser tab only." : "Update your name, email, password, or account access."}</Text>
+                                <Text size="sm" mt={6}>{isGuest ? "Guest session" : user.email}</Text>
                             </div>
                         </Group>
-                        <Button component={Link} href="/profile" variant="light">Manage profile</Button>
+                        <Button component={Link} href="/profile" variant="light">{isGuest ? "About guest mode" : "Manage profile"}</Button>
                     </Group>
                 </Paper>
             </Stack>
