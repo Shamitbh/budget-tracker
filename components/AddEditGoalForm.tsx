@@ -1,79 +1,58 @@
-import { Flex, Title, Button } from "@tremor/react";
-import { TextInput, NumberInput } from '@mantine/core';
-import { DateInput } from '@mantine/dates';
-import { useForm } from '@mantine/form';
-import { Goal } from "@/lib/Interfaces";
-
+import {Button, Group, NumberInput, Stack, TextInput} from "@mantine/core";
+import {DateInput} from "@mantine/dates";
+import {useForm} from "@mantine/form";
+import {Goal} from "@/lib/Interfaces";
 
 interface Props {
-    onFormClose: () => void,
-    onAddGoal: (name: string, amt: number, date: Date) => void,
-    onEditGoal: (goal: Goal) => void,
-    currentGoal?: Goal,
+    onFormClose: () => void;
+    onAddGoal: (name: string, amount: number, date: Date) => void | Promise<void>;
+    onEditGoal: (goal: Goal) => void | Promise<void>;
+    currentGoal?: Goal;
 }
 
-export default function AddGoalForm ({ onFormClose, onAddGoal, onEditGoal, currentGoal }: Props) {
+export default function AddGoalForm({onFormClose, onAddGoal, onEditGoal, currentGoal}: Props) {
     const form = useForm({
         initialValues: {
-          goalName: currentGoal ? currentGoal.goal_name : '',
-          goalAmount: currentGoal ? currentGoal.amt_goal : 0,
-          goalDate: currentGoal ? new Date(currentGoal.goal_date) : new Date(),
+            goalName: currentGoal?.goal_name ?? "",
+            goalAmount: currentGoal?.amt_goal ?? 0,
+            goalDate: currentGoal ? new Date(currentGoal.goal_date) : new Date(),
         },
         validate: {
-            goalAmount: (value) => (value > 0 ? null
-                : (value === 0 ? "Amount cannot be zero" : "Amount cannot be negative")),
-            goalDate: (value) => (value < new Date() ? "Data goal must be in the future" : null),
-        }
-      });
+            goalName: (value) => value.trim() ? null : "Goal name is required",
+            goalAmount: (value) => value > 0 ? null : "Amount must be greater than zero",
+            goalDate: (value) => value < new Date(new Date().setHours(0, 0, 0, 0)) ? "Target date cannot be in the past" : null,
+        },
+    });
 
-      console.log(currentGoal?.goal_date);
+    const handleSubmit = async (values: typeof form.values) => {
+        if (currentGoal) {
+            await onEditGoal({...currentGoal, goal_name: values.goalName.trim(), amt_goal: values.goalAmount, goal_date: values.goalDate});
+        } else {
+            await onAddGoal(values.goalName.trim(), values.goalAmount, values.goalDate);
+        }
+        form.reset();
+        onFormClose();
+    };
 
     return (
-        <>
-            <Title>{currentGoal ? currentGoal.goal_name : "New Goal"}</Title>
-            <form onSubmit={form.onSubmit((values) => {
-                if (currentGoal) {
-                    currentGoal.goal_name = values.goalName;
-                    currentGoal.amt_goal = values.goalAmount;
-                    currentGoal.goal_date = values.goalDate as Date;
-                    onEditGoal(currentGoal);
-                } else {
-                    onAddGoal(values.goalName, values.goalAmount, values.goalDate);
-                }
-
-                form.reset();
-                onFormClose();
-            })}>
-                <Flex flexDirection="col" alignItems="stretch" className="gap-2" >
-                    <TextInput
-                        placeholder="Vacation"
-                        label="Goal Title"
-                        {...form.getInputProps('goalName')}
-                    />
-                    <NumberInput
-                        label="Goal Amount"
-                        defaultValue={1000}
-                        parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
-                        formatter={(value) =>
-                            !Number.isNaN(parseFloat(value))
-                            ? `$ ${value}`.replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ',')
-                            : '$ '
-                        }
-                        {...form.getInputProps('goalAmount')}
-                    />
-                    <DateInput
-                        label="Target Date"
-                        placeholder="Date input"
-                        mx="auto"
-                        style={{width: "100%"}}
-                        {...form.getInputProps('goalDate')}
-                    />
-                    <Flex justifyContent="end" className="gap-2">
-                        <Button type="submit">Save</Button>
-                        <Button variant="secondary" onClick={ onFormClose }>Close</Button>
-                    </Flex>
-                </Flex>
-            </form>
-        </>
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+            <Stack spacing="md">
+                <TextInput label="Goal name" placeholder="e.g. Summer vacation" withAsterisk {...form.getInputProps("goalName")}/>
+                <NumberInput
+                    label="Target amount"
+                    min={0}
+                    precision={2}
+                    parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                    formatter={(value) => !Number.isNaN(parseFloat(value)) ? `$ ${value}` : "$ "}
+                    withAsterisk
+                    {...form.getInputProps("goalAmount")}
+                />
+                <DateInput label="Target date" placeholder="Choose a date" minDate={new Date()} withAsterisk {...form.getInputProps("goalDate")}/>
+                <Group position="right" mt="sm">
+                    <Button type="button" variant="default" onClick={onFormClose}>Cancel</Button>
+                    <Button type="submit">{currentGoal ? "Save changes" : "Add goal"}</Button>
+                </Group>
+            </Stack>
+        </form>
     );
 }

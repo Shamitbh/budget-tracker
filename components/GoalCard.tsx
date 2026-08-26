@@ -1,138 +1,141 @@
 "use client";
-import { useState } from "react";
-import { Goal } from "@/lib/Interfaces";
-import { editGoal, deleteGoal } from "@/lib/firebase";
-import { User } from "firebase/auth";
 
-import { NumberInput } from "@mantine/core";
-import { useForm } from "@mantine/form";
+import {useState} from "react";
+import {
+    ActionIcon,
+    Badge,
+    Button,
+    Group,
+    Menu,
+    Modal,
+    NumberInput,
+    Paper,
+    Popover,
+    Progress,
+    Stack,
+    Text,
+    Title,
+} from "@mantine/core";
+import {useForm} from "@mantine/form";
+import {IconDots, IconEdit, IconPlus, IconTrash} from "@tabler/icons-react";
+import {User} from "firebase/auth";
+import toast from "react-hot-toast";
 
-import { Card, Flex, Icon, Title, DonutChart, Color, Button} from "@tremor/react";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem} from "@/components/ui/dropdown-menu";
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import { IconPencil, IconSettings } from "@tabler/icons-react";
-import EditGoalForm from "./AddEditGoalForm";
-
-const valueFormatter = (number: number) => `$ ${Intl.NumberFormat("us").format(number).toString()}`;
+import AddGoalForm from "@/components/AddEditGoalForm";
+import {deleteGoal, editGoal} from "@/lib/firebase";
+import {Goal} from "@/lib/Interfaces";
 
 interface GoalCardProps {
-    user: User | null
-    goal: Goal
-    idx: number
-    savedColor: Color
+    user: User | null;
+    goal: Goal;
 }
 
-export default function GoalCard ({user, goal, idx, savedColor} : GoalCardProps) {
-    const [showEditForm, setShowEditForm] = useState(false);
+const formatCurrency = (amount: number) => new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+}).format(amount);
 
-    const goalData = [
-        {
-          tag: "Saved so far",
-          amount: goal.amt_saved,
-        },
-        {
-          tag: "Left to go",
-          amount: goal.amt_goal - goal.amt_saved,
-        },
-      ];
+export default function GoalCard({user, goal}: GoalCardProps) {
+    const [editOpened, setEditOpened] = useState(false);
+    const [deleteOpened, setDeleteOpened] = useState(false);
+    const saved = Math.min(goal.amt_saved, goal.amt_goal);
+    const remaining = Math.max(goal.amt_goal - goal.amt_saved, 0);
+    const progress = goal.amt_goal > 0 ? Math.min((goal.amt_saved / goal.amt_goal) * 100, 100) : 0;
+    const complete = remaining === 0;
 
     return (
-        <Card className="max-w-lg py-2 h-80">
-            {showEditForm ?
-            <EditGoalForm 
-                onFormClose={() => setShowEditForm(false)}
-                onAddGoal={() => {}}
-                onEditGoal={(goal) => editGoal(user, goal)}
-                currentGoal={goal}
-                />
-            :
-            <div>
-                <Flex>
-                    <Title>{goal.goal_name}</Title>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger>
-                            <Icon icon={IconSettings}
-                                color = "gray"
-                            />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem
-                                onSelect={() => setShowEditForm(true)}>
-                                Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onSelect={() => deleteGoal(user, goal.id)}> 
-                                Delete
-                            </DropdownMenuItem>
-                            {/* TODO: "are you sure"?,  toast to alert? */}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </Flex>
+        <>
+            <Paper radius="md" withBorder p="lg">
+                <Group position="apart" align="flex-start" noWrap>
+                    <div>
+                        <Title order={3}>{goal.goal_name}</Title>
+                        <Text size="sm" color="dimmed">Target {new Date(goal.goal_date).toLocaleDateString()}</Text>
+                    </div>
+                    <Menu position="bottom-end" withinPortal>
+                        <Menu.Target>
+                            <ActionIcon variant="subtle" aria-label={`Manage ${goal.goal_name}`}><IconDots size={20}/></ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                            <Menu.Item icon={<IconEdit size={16}/>} onClick={() => setEditOpened(true)}>Edit goal</Menu.Item>
+                            <Menu.Item color="red" icon={<IconTrash size={16}/>} onClick={() => setDeleteOpened(true)}>Delete goal</Menu.Item>
+                        </Menu.Dropdown>
+                    </Menu>
+                </Group>
 
-                <p>{new Date(goal.goal_date).toDateString()}</p>
-                {/* <Title>{goal.goal_date.getDate()}</Title> */}
+                <Group position="apart" mt="xl" mb={6}>
+                    <Text size="sm" color="dimmed">{formatCurrency(saved)} saved</Text>
+                    <Badge color={complete ? "green" : "blue"}>{complete ? "Complete" : `${Math.round(progress)}%`}</Badge>
+                </Group>
+                <Progress value={progress} color={complete ? "green" : "blue"} size="md" radius="xl"/>
 
-                <DonutChart
-                    className="mt-6"
-                    data={goalData}
-                    category="amount"
-                    index="tag"
-                    valueFormatter={valueFormatter}
-                    colors={[savedColor, "slate"]}
+                <Group position="apart" mt="lg" align="flex-end">
+                    <div>
+                        <Text size="xs" color="dimmed">Remaining</Text>
+                        <Text weight={600}>{formatCurrency(remaining)}</Text>
+                    </div>
+                    {!complete && <AddFundsPopover goal={goal} user={user} remaining={remaining}/>}
+                </Group>
+            </Paper>
+
+            <Modal opened={editOpened} onClose={() => setEditOpened(false)} title="Edit savings goal" centered>
+                <AddGoalForm
+                    currentGoal={goal}
+                    onFormClose={() => setEditOpened(false)}
+                    onAddGoal={() => undefined}
+                    onEditGoal={async (updatedGoal) => {
+                        await editGoal(user, updatedGoal);
+                        toast.success(`${updatedGoal.goal_name} updated`);
+                    }}
                 />
-                <Flex justifyContent="end">
-                    {goal.amt_saved === goal.amt_goal ? 
-                        <Button color='gray' disabled={true}>Goal Complete!</Button> : 
-                        <AddToGoalPopover
-                            remainingAmount={goal.amt_goal - goal.amt_saved} 
-                            updateAmount={(new_amt) => {
-                                goal.amt_saved += new_amt;
-                                editGoal(user, goal);
-                            }}
+            </Modal>
+
+            <Modal opened={deleteOpened} onClose={() => setDeleteOpened(false)} title="Delete savings goal?" centered>
+                <Text>Delete <strong>{goal.goal_name}</strong>? This cannot be undone.</Text>
+                <Group position="right" mt="xl">
+                    <Button variant="default" onClick={() => setDeleteOpened(false)}>Cancel</Button>
+                    <Button color="red" onClick={async () => {
+                        await deleteGoal(user, goal.id);
+                        setDeleteOpened(false);
+                        toast.success(`${goal.goal_name} deleted`);
+                    }}>Delete goal</Button>
+                </Group>
+            </Modal>
+        </>
+    );
+}
+
+function AddFundsPopover({goal, user, remaining}: {goal: Goal; user: User | null; remaining: number}) {
+    const [opened, setOpened] = useState(false);
+    const form = useForm({
+        initialValues: {amount: 0},
+        validate: {amount: (value) => value <= 0 ? "Amount must be greater than zero" : value > remaining ? "Amount exceeds the remaining goal" : null},
+    });
+
+    return (
+        <Popover opened={opened} onChange={setOpened} position="bottom-end" withArrow shadow="md">
+            <Popover.Target>
+                <Button variant="light" leftIcon={<IconPlus size={16}/>} onClick={() => setOpened((value) => !value)}>Add savings</Button>
+            </Popover.Target>
+            <Popover.Dropdown>
+                <form onSubmit={form.onSubmit(async ({amount}) => {
+                    await editGoal(user, {...goal, amt_saved: goal.amt_saved + amount});
+                    toast.success(`${formatCurrency(amount)} added to ${goal.goal_name}`);
+                    form.reset();
+                    setOpened(false);
+                })}>
+                    <Stack spacing="sm">
+                        <NumberInput
+                            label="Amount"
+                            min={0}
+                            max={remaining}
+                            precision={2}
+                            autoFocus
+                            {...form.getInputProps("amount")}
                         />
-                    }
-                </Flex>
-            </div>
-            }
-        </Card>
-    )
-}
-
-interface PopoverProps {
-    updateAmount: (amt: number) => void
-    remainingAmount: number
-}
-
-function AddToGoalPopover({ updateAmount, remainingAmount } : PopoverProps) {
-    const addForm = useForm({
-        initialValues: {
-          add_amount: 0,
-        },
-    
-        validate: {
-            add_amount: (value) => (value > remainingAmount ? "You'll go over your target goal amount!"
-                : (value === 0 ? "Amount cannot be zero" : (value < 0 ? "Amount cannot be negative" : null))),
-        },
-      });
-
-    return(
-        <Popover>
-            <PopoverTrigger>
-                <Icon icon={IconPencil} variant="light"/> 
-            </PopoverTrigger>
-            <PopoverContent>
-                <form onSubmit={addForm.onSubmit((values) => {
-                        updateAmount(values.add_amount)
-                        addForm.reset();
-                    })}>
-                    <Flex className="gap-2">
-                        <NumberInput 
-                            {...addForm.getInputProps("add_amount")}
-                            />
-                        <Button type="submit">Add</Button>
-                    </Flex>
+                        <Button type="submit" fullWidth>Add savings</Button>
+                    </Stack>
                 </form>
-            </PopoverContent>
+            </Popover.Dropdown>
         </Popover>
-    )
+    );
 }
