@@ -1,239 +1,118 @@
 "use client";
-import {upperFirst, useToggle, useDisclosure} from '@mantine/hooks';
-import {useForm} from '@mantine/form';
-import {
-    Anchor,
-    Button,
-    Checkbox,
-    Divider,
-    Group,
-    Paper,
-    PaperProps,
-    PasswordInput,
-    Stack,
-    Text,
-    TextInput,
-    Dialog,
-} from '@mantine/core';
+
+import React, {useState} from "react";
+import {Anchor, Button, Divider, Group, Modal, Paper, PaperProps, PasswordInput, Stack, Text, TextInput, Title} from "@mantine/core";
+import {useDisclosure, useToggle} from "@mantine/hooks";
+import {useForm} from "@mantine/form";
+import {IconBrandGoogle, IconCompass} from "@tabler/icons-react";
 import {
     createUserWithEmailAndPassword,
+    getAuth,
     GoogleAuthProvider,
+    sendPasswordResetEmail,
     signInWithEmailAndPassword,
     signInWithPopup,
     updateProfile,
-    User,
-    UserCredential,
-    sendPasswordResetEmail,
-    getAuth
 } from "firebase/auth";
-import {auth, ensureUserInDatabase, saveUserToDatabase} from "@/lib/firebase";
-import GoogleButton from "react-google-button";
-import React from "react";
+import toast from "react-hot-toast";
 
+import {useAuth} from "@/app/context";
+import {auth, ensureUserInDatabase, saveUserToDatabase} from "@/lib/firebase";
 
 export default function LoginMantine(props: PaperProps) {
-    // GOOGLE
-
-    const signInWithGoogle = async (): Promise<void> => {
-        if (typeof window !== 'undefined' && auth!) {
-            const provider: GoogleAuthProvider = new GoogleAuthProvider();
-            const result: UserCredential = await signInWithPopup(auth, provider);
-            const user: User = result.user;
-            if (user) {
-                await ensureUserInDatabase(user);
-            }
-        }
-    }
-    //COMPONENT
-    const [type, toggle] = useToggle(['login', 'register']);
-    const [opened, { open, close }] = useDisclosure(false);
+    const {continueAsGuest} = useAuth();
+    const [type, toggle] = useToggle(["login", "register"]);
+    const [resetOpened, {open: openReset, close: closeReset}] = useDisclosure(false);
+    const [submitting, setSubmitting] = useState(false);
     const form = useForm({
-        initialValues: {
-            email: '',
-            name: '',
-            password: '',
-            terms: true,
-        },
+        initialValues: {email: "", name: "", password: ""},
         validate: {
-            email: (val: string) => (/^\S+@\S+$/.test(val) ? null : 'Invalid email'),
-            password: (val: string) => (val.length <= 6 ? 'Password should include at least 6 characters' : null),
-        }
+            name: (value) => type === "register" && !value.trim() ? "Name is required" : null,
+            email: (value) => /^\S+@\S+$/.test(value) ? null : "Enter a valid email",
+            password: (value) => value.length >= 6 ? null : "Password must contain at least 6 characters",
+        },
     });
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        console.log(form.values);
-        const email = form.values.email;
-        const password = form.values.password;
-        const name = form.values.name;
+    const signInWithGoogle = async () => {
         try {
-            if (type == 'register') {
-                await createUserWithEmailAndPassword(auth!, email, password).then(() => {
-                    console.log("registered!");
-                });
-                if (auth?.currentUser) {
-                    await updateProfile(auth.currentUser, {
-                        displayName: name
-                    });
+            const result = await signInWithPopup(auth, new GoogleAuthProvider());
+            await ensureUserInDatabase(result.user);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Unable to sign in with Google");
+        }
+    };
 
-                    await saveUserToDatabase(auth.currentUser).then(() => {
-                        console.log("User successfully sent to database!");
-                        console.log(auth.currentUser)
-                    });
-                } else {
-                    console.error("No authenticated user found");
-                }
+    const handleSubmit = async (values: typeof form.values) => {
+        setSubmitting(true);
+        try {
+            if (type === "register") {
+                const result = await createUserWithEmailAndPassword(auth, values.email, values.password);
+                await updateProfile(result.user, {displayName: values.name.trim()});
+                await saveUserToDatabase(result.user);
+                toast.success("Your account is ready");
             } else {
-                const result = await signInWithEmailAndPassword(auth!, email, password);
+                const result = await signInWithEmailAndPassword(auth, values.email, values.password);
                 await ensureUserInDatabase(result.user);
-                console.log("logged in!");
             }
         } catch (error) {
-            console.warn(error);
-            alert(type === 'login' ? 'Error logging in' : 'Error creating account');
+            toast.error(error instanceof Error ? error.message : `Unable to ${type}`);
+        } finally {
+            setSubmitting(false);
         }
-    }
-
+    };
 
     return (
-        <Paper
-            radius={"md"}
-            p={"xl"}
-            withBorder
-            {...props}
-        >
-
-            <Text
-                size={"lg"}
-                weight={500}
-            >
-                Welcome, {type} with
+        <Paper radius="lg" p="xl" withBorder shadow="sm" {...props}>
+            <Title order={2}>{type === "login" ? "Welcome back" : "Create your account"}</Title>
+            <Text color="dimmed" size="sm" mt={4}>
+                {type === "login" ? "Sign in to continue managing your money." : "Start building a clearer picture of your finances."}
             </Text>
-            <Group
-                grow
-                mb={"md"}
-                mt={"md"}
-            >
-                <GoogleButton onClick={signInWithGoogle}/>
-            </Group>
-            <Divider
-                label={"Or continue with email"}
-                labelPosition={"center"}
-                my={"lg"}
-            />
-            <form onSubmit={handleSubmit}>
-                <Stack>
-                    {type == 'register' && (
-                        <TextInput
-                            label={"Name"}
-                            placeholder={"Your name"}
-                            value={form.values.name}
-                            onChange={(event) => form.setFieldValue('name', event.currentTarget.value)}
-                            radius={"md"}
-                        />
-                    )}
-                    <TextInput
-                        required
-                        label={"Email"}
-                        placeholder={"hello@you.com"}
-                        value={form.values.email}
-                        onChange={(event) => form.setFieldValue('email', event.currentTarget.value)}
-                        error={form.errors.email && 'Invalid Email'}
-                        radius={"md"}
-                    />
-                    <PasswordInput
-                        required
-                        label="Password"
-                        placeholder="Your password"
-                        value={form.values.password}
-                        onChange={(event) => form.setFieldValue('password', event.currentTarget.value)}
-                        error={form.errors.password && 'Password should include at least 6 characters'}
-                        radius="md"
-                    /> {type === 'register' && (
-                    <Checkbox
-                        label="I accept terms and conditions"
-                        checked={form.values.terms}
-                        onChange={(event) => form.setFieldValue('terms', event.currentTarget.checked)}
-                    />
-                )}
+
+            <Button fullWidth mt="xl" variant="default" leftIcon={<IconBrandGoogle size={18}/>} onClick={signInWithGoogle}>
+                Sign in with Google
+            </Button>
+            <Divider label="or use email" labelPosition="center" my="lg"/>
+
+            <form onSubmit={form.onSubmit(handleSubmit)}>
+                <Stack spacing="md">
+                    {type === "register" && <TextInput label="Name" placeholder="Your name" withAsterisk {...form.getInputProps("name")}/>}
+                    <TextInput label="Email" placeholder="hello@you.com" withAsterisk {...form.getInputProps("email")}/>
+                    <PasswordInput label="Password" placeholder="Your password" withAsterisk {...form.getInputProps("password")}/>
+                    <Group position="apart">
+                        <Anchor component="button" type="button" size="sm" onClick={() => {form.clearErrors(); toggle();}}>
+                            {type === "register" ? "Already have an account? Sign in" : "Need an account? Register"}
+                        </Anchor>
+                        {type === "login" && <Anchor component="button" type="button" size="sm" onClick={openReset}>Forgot password?</Anchor>}
+                    </Group>
+                    <Button type="submit" fullWidth loading={submitting}>{type === "login" ? "Sign in" : "Register"}</Button>
                 </Stack>
-                <Group position="apart" mt="xl">
-                    <Anchor
-                        component="button"
-                        type="button"
-                        color="dimmed"
-                        onClick={() => toggle()}
-                        size="s"
-                    >
-                        {type === 'register'
-                            ? 'Already have an account? Login'
-                            : "Don't have an account? Register"}
-                    </Anchor>
-
-                    {
-                        type === 'login' && 
-                            <Anchor
-                                component="button"
-                                type="button"
-                                color="dimmed"
-                                onClick={open} // Open Forgot Dialog 
-                                size="s"
-                                >
-                                Forgot Password?
-                            </Anchor> 
-                    }
-                    <ForgotPasswordForm opened={opened} close={close}></ForgotPasswordForm>
-                    
-                    <Button variant={"outline"} type="submit" radius="xl">
-                        {upperFirst(type)}
-                    </Button>
-
-                </Group>
             </form>
+
+            <Divider label="or explore first" labelPosition="center" my="lg"/>
+            <Button fullWidth variant="light" leftIcon={<IconCompass size={18}/>} onClick={continueAsGuest}>Continue as guest</Button>
+            <Text size="xs" color="dimmed" align="center" mt="sm">Try the app with sample data. Guest changes disappear when this tab closes.</Text>
+
+            <ForgotPasswordModal opened={resetOpened} onClose={closeReset}/>
         </Paper>
-    )
+    );
 }
 
-interface PasswordFormProps {
-    opened: boolean,
-    close: () => void
-
-}
-
-function ForgotPasswordForm({ opened, close } : PasswordFormProps) {
-
-    const form = useForm({
-        initialValues: {
-            email: ''
-        },
-        validate: {
-            email: (val: string) => (/^\S+@\S+$/.test(val) ? null : 'Invalid email'),
-        }
-    });
-
+function ForgotPasswordModal({opened, onClose}: {opened: boolean; onClose: () => void}) {
+    const form = useForm({initialValues: {email: ""}, validate: {email: (value) => /^\S+@\S+$/.test(value) ? null : "Enter a valid email"}});
     return (
-        <Dialog opened={opened} withCloseButton onClose={close} size="lg" radius="md">
-            <Text size="sm" mb="xs" fw={500}>Enter Your Email</Text>
-
-            <form onSubmit={() => {sendPasswordResetEmail(getAuth(), form.values.email)
-                            .then(() => {
-                                // Password reset email sent!
-                                alert("Please check your email for instructions to reset your password.");
-                            })
-                            .catch((error) => {
-                                const errorCode = error.code;
-                                const errorMessage = error.message;
-                                console.log("Error code: " + errorCode);
-                            });}}>
-                <Group align="flex-end">
-                    <TextInput 
-                        placeholder="hello@gluesticker.com" 
-                        style={{ flex: 1 }} 
-                        {...form.getInputProps('email')}
-                    />
-                    <Button variant={"outline"} type='submit'>Reset Password</Button>
-                </Group>
+        <Modal opened={opened} onClose={onClose} title="Reset your password" centered>
+            <form onSubmit={form.onSubmit(async ({email}) => {
+                try {
+                    await sendPasswordResetEmail(getAuth(), email);
+                    toast.success("Password reset email sent");
+                    onClose();
+                } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Unable to send reset email");
+                }
+            })}>
+                <TextInput label="Email" placeholder="hello@you.com" withAsterisk {...form.getInputProps("email")}/>
+                <Group position="right" mt="xl"><Button variant="default" onClick={onClose}>Cancel</Button><Button type="submit">Send reset email</Button></Group>
             </form>
-        </Dialog>
-    )
+        </Modal>
+    );
 }
