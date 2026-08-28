@@ -214,7 +214,7 @@ export const CustomButtons = () => {
                                 >
                                     <Popover.Target>
                                         <ThemeIcon
-                                            className={"p-0.5 bg-white text-black rounded-lg hover:bg-gray-500 hover:text-white cursor-pointer"}
+                                            className="cursor-pointer rounded-lg border bg-card p-0.5 text-card-foreground hover:bg-muted"
                                             size={30}
                                             radius={1}
                                             data-test={"theme-icon"}

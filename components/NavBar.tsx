@@ -52,7 +52,7 @@ export default function NavBar({collapsed}: Props) {
 
   return (
     <aside className={`flex absolute md:relative h-full z-30 border-r shadow-xl md:shadow-sm
-            ${colorScheme == 'dark' ? "dark bg-slate-950" : "bg-slate-50"}  
+            ${colorScheme == 'dark' ? "bg-slate-950/80" : "bg-slate-50"}
             ${collapsed ? "-translate-x-full w-64 md:translate-x-0 md:w-[4.5rem]" : "translate-x-0 w-64"} transition-all duration-200`}>
       <nav className="flex flex-col m-3 gap-2 divide-y w-full">
           {/* <div className="flex flex-row px-2 py-1 gap-3 items-center">
