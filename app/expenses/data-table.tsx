@@ -84,14 +84,14 @@ export function DataTable<TValue>({columns, data,}: DataTableProps<Expense, TVal
             </div>
             {data.length > table.getState().pagination.pageSize && <div className="flex items-center justify-end space-x-2 py-4">
                 <Button
-                    variant={"white"}
+                    variant="default"
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
                 >
                     Previous
                 </Button>
                 <Button
-                    variant={"white"}
+                    variant="default"
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
                 >

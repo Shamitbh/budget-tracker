@@ -27,7 +27,7 @@ export default function NavItem({name, Icon, href, isActive, collapsed}: Props) 
                 stroke={1.5}
                 className={isActive ? "text-emerald-600" : "text-slate-500"}
             />
-            {!collapsed && <span className={`text-sm grow ${colorScheme == 'dark' ? 'text-amber-50' : ""}`}>
+            {!collapsed && <span className="grow text-sm">
           {name}
         </span>}
             {/*{children}*/}

@@ -69,7 +69,7 @@ export default function RootLayout({
                         withGlobalStyles
                         withNormalizeCSS
                     >
-                        <html lang="en">
+                        <html lang="en" className={colorScheme === "dark" ? "dark" : ""} style={{colorScheme}}>
                         <Head>
                             <meta charSet="utf-8"/>
                             <title>Budget Tracker — Calm, clear personal finance</title>
@@ -77,7 +77,7 @@ export default function RootLayout({
                         </Head>
 
                         <AuthProvider>
-                            <body className={`${manrope.className} h-[calc(100vh-0.1rem)] ${colorScheme == 'dark' ? "bg-slate-900" : ""}`}>
+                            <body className={`${manrope.className} h-[calc(100vh-0.1rem)] bg-background text-foreground`}>
                             <Header
                                 onCollapse={() => setCollapsed(!collapsed)}
                             />
@@ -91,7 +91,7 @@ export default function RootLayout({
                                     />
                                 )}
                                 <main
-                                    className={`flex-1 overflow-y-auto ${colorScheme === 'dark' ? "bg-slate-900" : "bg-white"}`}
+                                    className="flex-1 overflow-y-auto bg-background"
                                 >
                                     {children}
                                 </main>
