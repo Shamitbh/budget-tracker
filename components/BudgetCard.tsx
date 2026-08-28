@@ -4,6 +4,7 @@ import React, {useState} from "react";
 import {icons} from "@/lib/icons";
 import Link from "next/link";
 import IconPickerPopover from "@/components/IconPickerPopover";
+import {formatCurrency} from "@/lib/utils";
 
 
 const ICON_SIZE = rem(60);
@@ -63,7 +64,7 @@ export default function BudgetCard({id, budgetName, budgetAmount, spent, iconNam
                 {budgetName}
             </Text>
             <Text c="dimmed" ta="center" fz="sm" data-test={"budget-amount"}>
-                ${budgetAmount} / month
+                {formatCurrency(budgetAmount)} / month
             </Text>
 
             <Group position="apart" mt="xs">
@@ -91,9 +92,7 @@ export default function BudgetCard({id, budgetName, budgetAmount, spent, iconNam
                     size="sm"
                     data-test={"money-left"}
                 >
-                    ${
-                    moneyLeft.toFixed(2) === "NaN" ? "0.00" : moneyLeft.toFixed(2)
-                } left
+                    {formatCurrency(moneyLeft)} left
                 </Badge>
             </Group>
         </Paper>

@@ -15,3 +15,9 @@ export function getCurrentDate(): DateData {
         year: date.getFullYear()
     }
 }
+
+export const formatCurrency = (value: number) => new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+}).format(Number.isFinite(value) ? value : 0);
