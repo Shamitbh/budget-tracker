@@ -12,6 +12,7 @@ import LoadingTable from "@/app/expenses/LoadingTable";
 import MonthlyExpenses from "@/components/MonthlyExpenses";
 import AddExpensePopover from "@/components/AddExpensePopover";
 import {getCurrentDate} from "@/lib/utils";
+import PageHeader from "@/components/PageHeader";
 
 export default function Page() {
 
@@ -31,10 +32,13 @@ export default function Page() {
     if (!user) return <LoginMantine/>
     return (
         <div className="mx-auto w-full max-w-7xl p-4 sm:p-6 lg:p-8">
-            <div className={`text-4xl font-bold pb-2 mt-5 ${colorScheme == 'dark' ? "text-white" : ""}`}>
-                {currentDate.monthName} {currentDate.year}
-            </div>
-            <div className={"flex flex-row justify-between mb-10 mt-1"}>
+            <PageHeader
+                eyebrow="Expenses"
+                title={`${currentDate.monthName} ${currentDate.year}`}
+                description="Review transactions and understand where your money went."
+                actions={<AddExpensePopover month={currentDate.month} year={currentDate.year}/>}
+            />
+            <div className={"flex flex-row justify-between mb-6 mt-1"}>
                 <div className={"flex flex-row gap-1"}>
                     <div className={"text-2xl font-bold"}>
                         <Button
@@ -99,10 +103,7 @@ export default function Page() {
                         <div className={`text-2xl font-medium m-2 ${colorScheme == "dark" ? "text-white" : ""}`}>
                             All Expenses
                         </div>
-                        <div className="p-1">
-
-                            <AddExpensePopover month={currentDate.month} year={currentDate.year}/>
-                        </div>
+                        <div/>
 
                     </div>
 
