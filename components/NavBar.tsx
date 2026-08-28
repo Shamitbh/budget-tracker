@@ -51,8 +51,8 @@ export default function NavBar({collapsed}: Props) {
 //   }, [animationDuration, collapsed])
 
   return (
-    <aside className={`flex absolute md:relative h-full z-10 border-r 
-            ${colorScheme == 'dark' ? "dark bg-slate-900" : "bg-white"}  
+    <aside className={`flex absolute md:relative h-full z-10 border-r shadow-sm
+            ${colorScheme == 'dark' ? "dark bg-slate-950" : "bg-slate-50"}  
             ${collapsed ? "w-0 overflow-hidden sm:w-[4.5rem]" : "w-64"} transition-all`}>
       <nav className="flex flex-col m-3 gap-2 divide-y w-full">
           {/* <div className="flex flex-row px-2 py-1 gap-3 items-center">
