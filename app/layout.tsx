@@ -72,6 +72,8 @@ export default function RootLayout({
                         <html lang="en">
                         <Head>
                             <meta charSet="utf-8"/>
+                            <title>Budget Tracker — Calm, clear personal finance</title>
+                            <meta name="description" content="Track expenses, plan budgets, and make steady progress toward savings goals."/>
                         </Head>
 
                         <AuthProvider>

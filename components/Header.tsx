@@ -25,7 +25,10 @@ export default function Header({onCollapse}: Props) {
         )}
         <Link href="/" className={`flex items-center gap-2 text-xl font-bold tracking-tight ${colorScheme == 'dark'? "text-white" : ""}`}>
             <span className="rounded-lg bg-emerald-600 p-1.5 text-white"><IconPigMoney size={20}/></span>
-            Budget Tracker
+            <span>
+                <span className="block leading-none">Budget Tracker</span>
+                <span className="hidden text-[10px] font-medium text-slate-500 sm:block">Money, made clearer</span>
+            </span>
         </Link>
         
         <div className="ml-auto">
