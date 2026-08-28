@@ -43,7 +43,8 @@ export default function BudgetCard({id, budgetName, budgetAmount, spent, iconNam
     const icon = icons.find(icon => icon.name === iconName);
     const [selectedIcon, setSelectedIcon] = useState(icon)
     const moneyLeft: number = budgetAmount - spent;
-    const percentProgress = (spent / budgetAmount) * 100;
+    const percentProgress = budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0;
+    const progressColor = percentProgress >= 100 ? "red" : percentProgress >= 80 ? "yellow" : "teal";
 
     const handleIconSelect = (iconId: string) => {
         const selectedIcon = icons.find(icon => icon.name === iconId);
@@ -66,6 +67,9 @@ export default function BudgetCard({id, budgetName, budgetAmount, spent, iconNam
             <Text c="dimmed" ta="center" fz="sm" data-test={"budget-amount"}>
                 {formatCurrency(budgetAmount)} / month
             </Text>
+            <Text ta="center" fz="sm" fw={600} mt="sm" className="tabular-nums">
+                {formatCurrency(spent)} of {formatCurrency(budgetAmount)} spent
+            </Text>
 
             <Group position="apart" mt="xs">
                 <Text fz="sm" color="dimmed" data-test={"budget-progress"}>
@@ -78,7 +82,7 @@ export default function BudgetCard({id, budgetName, budgetAmount, spent, iconNam
                 </Text>
             </Group>
 
-            <Progress value={percentProgress} mt={5} data-test={"budget-progress-bar"}/>
+            <Progress value={Math.min(percentProgress, 100)} color={progressColor} size="md" radius="xl" mt={5} data-test={"budget-progress-bar"}/>
 
             <Group position="apart" mt="md">
                 <Link href="/budgets">
