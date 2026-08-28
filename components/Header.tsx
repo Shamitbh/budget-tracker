@@ -1,5 +1,5 @@
 "use client";
-import { IconMenu2 } from '@tabler/icons-react'
+import { IconMenu2, IconPigMoney } from '@tabler/icons-react'
 import Link from 'next/link';
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 import { useMantineColorScheme, Image } from "@mantine/core";
@@ -23,16 +23,9 @@ export default function Header({onCollapse}: Props) {
                 <IconMenu2 color={colorScheme === 'dark' ? 'white' : 'gray'}/>
             </button>
         )}
-        <Link href="/" 
-            className={`text-2xl font-bold justify-self-start transition-all ${colorScheme == 'dark'? "text-amber-50" : ""}`}
-            >Budget Tracker
-        </Link>
-           
-        <Link href="https://github.com/Shamitbh/budget-tracker"
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-medium bg-slate-200 text-slate-700 rounded-sm px-2 py-1"
-            >GitHub
+        <Link href="/" className={`flex items-center gap-2 text-xl font-bold tracking-tight ${colorScheme == 'dark'? "text-white" : ""}`}>
+            <span className="rounded-lg bg-emerald-600 p-1.5 text-white"><IconPigMoney size={20}/></span>
+            Budget Tracker
         </Link>
         
         <div className="ml-auto">
