@@ -15,6 +15,7 @@ import LoadingAtAGlance from "@/components/layouts/LoadingAtAGlance";
 import MiniExpenses from "@/components/miniComponents/MiniExpenses";
 import MonthlyExpenses from "@/components/MonthlyExpenses";
 import LandingPage from "@/components/LandingPage";
+import SummaryCards from "@/components/SummaryCards";
 
 const PRIMARY_COL_HEIGHT = rem(400);
 
@@ -35,15 +36,13 @@ export default function Home() {
 
     return (
         <>
+            <div className="mx-auto w-full max-w-screen-2xl px-4 pt-6 sm:px-6 lg:px-8">
+                <SummaryCards budgets={budgets} summary={summary}/>
+            </div>
             <ThreeColumnLayout
                 one={<MiniExpenses/>}
                 two={<MonthlyExpensesFrame/>}
-                three={<AtAGlance
-                    // userData={userData}
-                    // user={user}
-                    budgets={budgets}
-                    summary={summary}
-                />}
+                three={<AtAGlance budgets={budgets} summary={summary}/>}
             />
         </>
     )
