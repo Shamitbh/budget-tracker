@@ -60,6 +60,9 @@ export default function RootLayout({
                     <MantineProvider
                         theme={{
                             colorScheme,
+                            primaryColor: "teal",
+                            primaryShade: {light: 7, dark: 4},
+                            defaultRadius: "md",
                             fontFamily: manrope.style.fontFamily,
                             headings: {fontFamily: manrope.style.fontFamily},
                         }}
