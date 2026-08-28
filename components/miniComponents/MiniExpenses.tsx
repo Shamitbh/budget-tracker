@@ -128,14 +128,11 @@ export default function MiniExpenses() {
 
             >
 
-                <div className={"flex justify-between"}>
+                <div className="mb-4 flex items-center justify-between">
                     <div className={"text-2xl"}>
                         All Expenses
                     </div>
-                    <div className="p-1">
-
-                        <AddExpensePopover/>
-                    </div>
+                    <AddExpensePopover/>
 
                 </div>
                 <DataTable columns={columns} data={expenses}/>
