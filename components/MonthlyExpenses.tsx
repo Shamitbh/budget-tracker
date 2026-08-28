@@ -6,6 +6,8 @@ import {Input} from "@/components/ui/input"
 import {CategoryPicker} from "@/components/CategoryPicker";
 import {IconPlus} from "@tabler/icons-react";
 import ExpenseAddButton from "@/components/ExpenseAddButton";
+import {ExpenseTableEmptyState, ExpenseTableFrame, expenseTableHeaderClass, expenseTableRowClass} from "@/components/ExpenseTablePrimitives";
+import {formatCurrency} from "@/lib/utils";
 import {ChangeEvent, MutableRefObject, useEffect, useRef, useState} from "react";
 import {addOrUpdateExpense, deactivateRecurringExpense, useExpenses} from "@/lib/firebase";
 import {useAuth} from "@/app/context";
@@ -174,28 +176,25 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                     onClick={toggleForm}
                 />
             </div>
-            <Table className={""}>
+            <ExpenseTableFrame>
+            <Table>
 
-                <TableHeader>
+                <TableHeader className={expenseTableHeaderClass}>
                     <TableRow>
                         <TableHead className={"text-left"}>Name</TableHead>
-                        <TableHead className={"text-center"}>Category</TableHead>
-                        <TableHead className={"text-center"}>Amount</TableHead>
-                        <TableHead className={" text-center"}>Action</TableHead>
+                        <TableHead className="text-left">Category</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {currentExpenses.length === 0 && !showForm && (
-                        <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center text-gray-500">
-                                No monthly expenses yet.
-                            </TableCell>
-                        </TableRow>
+                        <ExpenseTableEmptyState colSpan={4} monthly/>
                     )}
                     {
                         currentExpenses.map((expense, index) => {
                                 return (
-                                    <TableRow key={index}>
+                                    <TableRow key={index} className={expenseTableRowClass}>
                                         <EditableTableCell
                                             className={"w-[150px] text-left"}
                                             initialValue={expense.name}
@@ -204,20 +203,20 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                                         />
 
                                         <EditableTableCell
-                                            className={"w-[30px] text-center"}
+                                            className="w-[30px] text-left"
                                             initialValue={expense.categoryID}
                                             onEdit={(newValue) => handleCellEdit(newValue, index, "categoryID")}
                                             type={"category"}
                                         />
                                         <EditableTableCell
-                                            className={"text-center font-mono w-[15px]"}
+                                            className="w-[100px] text-right font-semibold tabular-nums"
                                             initialValue={`${expense.amount}`}
                                             onEdit={(newValue) => handleCellEdit(newValue, index, "amount")}
                                             isCurrency
                                         />
 
 
-                                        <TableCell className={"text-center w-[20px]"}>
+                                        <TableCell className="w-[100px] text-right">
                                             {expense.recurringExpenseID && expense.recurrenceActive !== false && (
                                                 <Button
                                                     variant={"ghost"}
@@ -239,7 +238,7 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                     }
                     {showForm &&
 
-                        <TableRow>
+                        <TableRow className={expenseTableRowClass}>
                             <TableCell className={""}>
                                 <Input
                                     placeholder={"Expense Name"}
@@ -263,7 +262,7 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                                     onChange={(e) => handleInputChange(e, "amount")}
                                 />
                             </TableCell>
-                            <TableCell className={"text-center "}>
+                            <TableCell className="text-right">
                                 <button
                                     type="button"
                                     aria-label="Save monthly expense"
@@ -276,13 +275,10 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                         </TableRow>
                     }
                     {currentExpenses.length > 0 && (
-                        <TableRow>
-                            <TableCell className="text-right font-semibold" colSpan={2}>Total</TableCell>
-                            <TableCell className="text-center font-mono font-bold">
-                                ${currentExpenses.reduce((total, expense) => total + expense.amount, 0).toLocaleString('en-US', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                            })}
+                        <TableRow className="bg-muted/30 hover:bg-muted/30">
+                            <TableCell className="text-right font-semibold text-muted-foreground" colSpan={2}>Total</TableCell>
+                            <TableCell className="text-right font-bold tabular-nums">
+                                {formatCurrency(currentExpenses.reduce((total, expense) => total + expense.amount, 0))}
                             </TableCell>
                             <TableCell/>
                         </TableRow>
@@ -291,6 +287,7 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
 
                 </TableBody>
             </Table>
+            </ExpenseTableFrame>
 
 
         </div>

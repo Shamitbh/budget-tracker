@@ -3,7 +3,6 @@
 import {ColumnDef} from "@tanstack/react-table";
 import {Expense} from "@/lib/Interfaces";
 import {ArrowUpDown} from "lucide-react"
-import {Button} from "@mantine/core";
 import {formatCurrency} from "@/lib/utils";
 
 /*
@@ -15,23 +14,22 @@ export const columns: ColumnDef<Expense>[] = [
     {
         accessorKey: "name",
         header: () => {
-            return <div className={"text-left font-bold"}>Name</div>;
+            return <div className="text-left">Name</div>;
         },
     },
     {
         accessorKey: "amount",
         header: ({column}) => {
             return (
-                <div className={"text-right"}>
-                    <Button
-                        variant="ghost"
+                <div className="flex justify-end">
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded px-1 py-1 hover:text-foreground"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
-                        <ArrowUpDown className="ml-2 h-4 w-4 "/>
-                        <div className="pr-1"/>
                         Amount
-
-                    </Button>
+                        <ArrowUpDown className="h-3.5 w-3.5"/>
+                    </button>
                 </div>
             )
         },
@@ -45,19 +43,21 @@ export const columns: ColumnDef<Expense>[] = [
         accessorKey: "categoryID",
         header: ({column}) => {
             return (
-                <Button
-                    variant="ghost"
+                <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 rounded px-1 py-1 hover:text-foreground"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     Category
-                    <ArrowUpDown className="ml-2 h-4 w-4"/>
-                </Button>
+                    <ArrowUpDown className="h-3.5 w-3.5"/>
+                </button>
             )
         },
     },
     {
         accessorKey: "date",
-        header: "Date",
+        header: () => <div className="text-right">Date</div>,
+        cell: ({getValue}) => <div className="text-right text-muted-foreground">{String(getValue() ?? "")}</div>,
     },
     // {
     //     accessorKey: "actions",
