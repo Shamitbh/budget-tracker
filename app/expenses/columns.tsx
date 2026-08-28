@@ -4,6 +4,7 @@ import {ColumnDef} from "@tanstack/react-table";
 import {Expense} from "@/lib/Interfaces";
 import {ArrowUpDown} from "lucide-react"
 import {Button} from "@mantine/core";
+import {formatCurrency} from "@/lib/utils";
 
 /*
 Columns are where you define the core of what your table will look like. They define the data that will be displayed, how it will be formatted, sorted and filtered.
@@ -36,11 +37,7 @@ export const columns: ColumnDef<Expense>[] = [
         },
         cell: ({row}) => {
             const amount = parseFloat(row.getValue("amount"));
-            const formatted = new Intl.NumberFormat("en-US", {
-                style: "currency",
-                currency: "USD",
-            }).format(amount);
-            return <div className="text-right font-mono">{formatted}</div>
+            return <div className="text-right font-semibold tabular-nums">{formatCurrency(amount)}</div>
 
         }
     },
