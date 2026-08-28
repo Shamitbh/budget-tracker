@@ -13,7 +13,6 @@ import {
     ThemeIcon
 } from "@mantine/core";
 import {CategoryPicker} from "@/components/CategoryPicker";
-import {Spacer} from "@nextui-org/react";
 import {useForm} from "@mantine/form";
 import {CustomButton, ExpenseClass} from "@/lib/Interfaces";
 import {IconCheck, IconPencil, IconPlus} from "@tabler/icons-react";
@@ -119,7 +118,7 @@ export const CustomButtons = () => {
                     ))
                 )}
             </div>
-            <Spacer y={4}/>
+            <div className="h-4" aria-hidden="true"/>
             <div className={"flex justify-end gap-1"}>
                 {/*EDIT*/}
                 <TooltipProvider>
