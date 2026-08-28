@@ -30,7 +30,7 @@ export default function Page() {
     if (loading) return <LoadingTable/>
     if (!user) return <LoginMantine/>
     return (
-        <div className={"m-5"}>
+        <div className="mx-auto w-full max-w-7xl p-4 sm:p-6 lg:p-8">
             <div className={`text-4xl font-bold pb-2 mt-5 ${colorScheme == 'dark' ? "text-white" : ""}`}>
                 {currentDate.monthName} {currentDate.year}
             </div>
