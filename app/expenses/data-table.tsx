@@ -16,6 +16,7 @@ import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from "@/
 import {Expense} from "@/lib/Interfaces"
 import {Button, useMantineTheme} from "@mantine/core"
 import {useState} from "react"
+import {IconReceiptOff} from "@tabler/icons-react"
 
 interface DataTableProps<Expense, TValue> {
     columns: ColumnDef<Expense, TValue>[]
@@ -69,15 +70,19 @@ export function DataTable<TValue>({columns, data,}: DataTableProps<Expense, TVal
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    No expenses recorded for this month.
+                                <TableCell colSpan={columns.length} className="h-56 text-center">
+                                    <div className="mx-auto flex max-w-sm flex-col items-center gap-2 text-muted-foreground">
+                                        <span className="rounded-full bg-muted p-3"><IconReceiptOff size={26} aria-hidden="true"/></span>
+                                        <p className="font-semibold text-foreground">No expenses yet</p>
+                                        <p className="text-sm">Add an expense to start seeing this month&apos;s spending patterns.</p>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
             </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
+            {data.length > table.getState().pagination.pageSize && <div className="flex items-center justify-end space-x-2 py-4">
                 <Button
                     variant={"white"}
                     onClick={() => table.previousPage()}
@@ -92,7 +97,7 @@ export function DataTable<TValue>({columns, data,}: DataTableProps<Expense, TVal
                 >
                     Next
                 </Button>
-            </div>
+            </div>}
         </>
     )
 }
