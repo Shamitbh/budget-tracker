@@ -114,6 +114,7 @@ const CellRow = ({row, colorScheme}: CellProps) => {
         <TableRow
             key={row.id}
             data-state={row.getIsSelected() && "selected"}
+            className="transition-colors hover:bg-muted/60"
         >
             {row.getVisibleCells().map((cell: Cell<Expense, unknown>) => (
                 <TableCell key={cell.id}
