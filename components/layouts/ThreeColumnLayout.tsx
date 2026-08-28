@@ -10,7 +10,7 @@ interface Props {
 export const ThreeColumnLayout = ({one, two, three}: Props) => {
 
     return (
-        <div className={"p-3"}>
+        <div className="mx-auto w-full max-w-screen-2xl p-4 sm:p-6 lg:p-8">
             <Grid grow
                   gutter={"sm"}
                   columns={10}
