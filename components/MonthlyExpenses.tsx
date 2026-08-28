@@ -6,9 +6,9 @@ import {Input} from "@/components/ui/input"
 import {CategoryPicker} from "@/components/CategoryPicker";
 import {IconPlus} from "@tabler/icons-react";
 import ExpenseAddButton from "@/components/ExpenseAddButton";
-import {ExpenseTableEmptyState, ExpenseTableFrame, expenseTableHeaderClass, expenseTableRowClass} from "@/components/ExpenseTablePrimitives";
+import {ExpenseSortButton, ExpenseTableEmptyState, ExpenseTableFrame, expenseTableHeaderClass, expenseTableRowClass} from "@/components/ExpenseTablePrimitives";
 import {formatCurrency} from "@/lib/utils";
-import {ChangeEvent, MutableRefObject, useEffect, useRef, useState} from "react";
+import {ChangeEvent, MutableRefObject, useEffect, useMemo, useRef, useState} from "react";
 import {addOrUpdateExpense, deactivateRecurringExpense, useExpenses} from "@/lib/firebase";
 import {useAuth} from "@/app/context";
 import {debounce} from "lodash"
@@ -23,6 +23,8 @@ interface MonthlyExpensesProps {
     year?: number;
 }
 
+type MonthlySortKey = "name" | "categoryID" | "amount";
+
 export default function MonthlyExpenses({width = "w-full", height = "h-full", month, year}: MonthlyExpensesProps) {
     const {colorScheme} = useMantineTheme();
     const initialExpenseRow = {
@@ -34,9 +36,29 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
 
     const [showForm, setShowForm] = useState<boolean>(false);
     const [newExpenseRow, setNewExpenseRow] = useState(initialExpenseRow);
+    const [sort, setSort] = useState<{key: MonthlySortKey; direction: "asc" | "desc"} | null>(null);
     const {user, loading} = useAuth();
 
     const currentExpenses: Expense[] = useExpenses(user, true, month, year);
+    const sortedExpenses = useMemo(() => {
+        if (!sort) return currentExpenses;
+        return [...currentExpenses].sort((a, b) => {
+            const left = a[sort.key];
+            const right = b[sort.key];
+            const comparison = typeof left === "number" && typeof right === "number"
+                ? left - right
+                : String(left).localeCompare(String(right), undefined, {sensitivity: "base"});
+            return sort.direction === "asc" ? comparison : -comparison;
+        });
+    }, [currentExpenses, sort]);
+
+    const toggleSort = (key: MonthlySortKey) => {
+        setSort((current) => current?.key === key
+            ? {key, direction: current.direction === "asc" ? "desc" : "asc"}
+            : {key, direction: "asc"});
+    };
+
+    const sortDirection = (key: MonthlySortKey) => sort?.key === key ? sort.direction : false;
 
     // TODO: Too many hooks or re-renders below
     // Updating from MonthlyExpenses is commented out for now
@@ -72,26 +94,23 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
 
     const handleCellEdit = async (
         newValue: string | number,
-        expenseIndex: number,
+        expense: Expense,
         field: keyof Expense
     ) => {
-        const updatedExpenses = [...currentExpenses];
         let processedValue = newValue;
 
         if (field === "amount") {
             processedValue = parseFloat(String(newValue).replace(/,/g, ""));
         }
 
-        if (typeof updatedExpenses[expenseIndex] !== "undefined") {
-            // Only update if the value has changed
-            if (updatedExpenses[expenseIndex][field] !== processedValue) {
-                updatedExpenses[expenseIndex] = {
-                    ...updatedExpenses[expenseIndex],
+        if (expense[field] !== processedValue) {
+                const updatedExpense = {
+                    ...expense,
                     [field]: processedValue,
                 };
 
                 // convert to class for addOrUpdateExpense function
-                const exp = updatedExpenses[expenseIndex];
+                const exp = updatedExpense;
                 const expAsClass = new ExpenseClass(exp.name, exp.categoryID, exp.amount, exp.description, exp.vendor,  exp.month, exp.year, exp.is_monthly, exp.is_yearly, exp.is_deleted);
                 expAsClass.id = exp.id;
                 expAsClass.recurringExpenseID = exp.recurringExpenseID;
@@ -103,7 +122,6 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                 } catch (error) {
                     toast.error(error instanceof Error ? error.message : "Unable to update expense");
                 }
-            }
         }
 
         // setCurrentExpenses(updatedExpenses);
@@ -181,9 +199,9 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
 
                 <TableHeader className={expenseTableHeaderClass}>
                     <TableRow>
-                        <TableHead className={"text-left"}>Name</TableHead>
-                        <TableHead className="text-left">Category</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead><ExpenseSortButton label="Name" direction={sortDirection("name")} onClick={() => toggleSort("name")}/></TableHead>
+                        <TableHead><ExpenseSortButton label="Category" direction={sortDirection("categoryID")} onClick={() => toggleSort("categoryID")}/></TableHead>
+                        <TableHead><ExpenseSortButton label="Amount" align="right" direction={sortDirection("amount")} onClick={() => toggleSort("amount")}/></TableHead>
                         <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -192,26 +210,26 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                         <ExpenseTableEmptyState colSpan={4} monthly/>
                     )}
                     {
-                        currentExpenses.map((expense, index) => {
+                        sortedExpenses.map((expense) => {
                                 return (
-                                    <TableRow key={index} className={expenseTableRowClass}>
+                                    <TableRow key={expense.id} className={expenseTableRowClass}>
                                         <EditableTableCell
                                             className={"w-[150px] text-left"}
                                             initialValue={expense.name}
-                                            onEdit={(newValue) => handleCellEdit(newValue, index, "name")}
+                                            onEdit={(newValue) => handleCellEdit(newValue, expense, "name")}
                                             type={"text"}
                                         />
 
                                         <EditableTableCell
                                             className="w-[30px] text-left"
                                             initialValue={expense.categoryID}
-                                            onEdit={(newValue) => handleCellEdit(newValue, index, "categoryID")}
+                                            onEdit={(newValue) => handleCellEdit(newValue, expense, "categoryID")}
                                             type={"category"}
                                         />
                                         <EditableTableCell
                                             className="w-[100px] text-right font-semibold tabular-nums"
                                             initialValue={`${expense.amount}`}
-                                            onEdit={(newValue) => handleCellEdit(newValue, index, "amount")}
+                                            onEdit={(newValue) => handleCellEdit(newValue, expense, "amount")}
                                             isCurrency
                                         />
 

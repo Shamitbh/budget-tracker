@@ -2,8 +2,8 @@
 
 import {ColumnDef} from "@tanstack/react-table";
 import {Expense} from "@/lib/Interfaces";
-import {ArrowUpDown} from "lucide-react"
 import {formatCurrency} from "@/lib/utils";
+import {ExpenseSortButton} from "@/components/ExpenseTablePrimitives";
 
 /*
 Columns are where you define the core of what your table will look like. They define the data that will be displayed, how it will be formatted, sorted and filtered.
@@ -21,16 +21,7 @@ export const columns: ColumnDef<Expense>[] = [
         accessorKey: "amount",
         header: ({column}) => {
             return (
-                <div className="flex justify-end">
-                    <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 rounded px-1 py-1 hover:text-foreground"
-                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    >
-                        Amount
-                        <ArrowUpDown className="h-3.5 w-3.5"/>
-                    </button>
-                </div>
+                <ExpenseSortButton label="Amount" align="right" direction={column.getIsSorted()} onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}/>
             )
         },
         cell: ({row}) => {
@@ -43,14 +34,7 @@ export const columns: ColumnDef<Expense>[] = [
         accessorKey: "categoryID",
         header: ({column}) => {
             return (
-                <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 rounded px-1 py-1 hover:text-foreground"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Category
-                    <ArrowUpDown className="h-3.5 w-3.5"/>
-                </button>
+                <ExpenseSortButton label="Category" direction={column.getIsSorted()} onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}/>
             )
         },
     },
