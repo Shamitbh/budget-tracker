@@ -5,6 +5,7 @@ import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input"
 import {CategoryPicker} from "@/components/CategoryPicker";
 import {IconPlus} from "@tabler/icons-react";
+import ExpenseAddButton from "@/components/ExpenseAddButton";
 import {ChangeEvent, MutableRefObject, useEffect, useRef, useState} from "react";
 import {addOrUpdateExpense, deactivateRecurringExpense, useExpenses} from "@/lib/firebase";
 import {useAuth} from "@/app/context";
@@ -167,17 +168,11 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
                     </div>
                 </div>
 
-                <div>
-                    <Button
-                        className={"mr-16"}
-                        variant={"secondary"}
-                        size={"sm"}
-                        aria-label={showForm ? "Close monthly expense form" : "Add monthly expense"}
-                        onClick={showForm ? toggleForm : toggleForm}
-                    >
-                        <IconPlus/>
-                    </Button>
-                </div>
+                <ExpenseAddButton
+                    label={showForm ? "Close monthly expense form" : "Add monthly expense"}
+                    aria-expanded={showForm}
+                    onClick={toggleForm}
+                />
             </div>
             <Table className={""}>
 

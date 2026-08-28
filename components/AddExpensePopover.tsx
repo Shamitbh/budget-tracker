@@ -1,67 +1,30 @@
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import {IconChevronDown, IconPlus} from "@tabler/icons-react";
+import {IconPlus} from "@tabler/icons-react";
 import {Button, Input, NumberInput, useMantineColorScheme, useMantineTheme} from "@mantine/core";
 import {useRef, useState} from "react";
 import {CategoryPicker} from "@/components/CategoryPicker";
 import toast from "react-hot-toast";
-import {CustomButtons} from "@/components/CustomButtons";
 import {ExpenseClass} from "@/lib/Interfaces";
 import {addOrUpdateExpense} from "@/lib/firebase";
 import {useAuth} from "@/app/context";
+import ExpenseAddButton from "@/components/ExpenseAddButton";
 
 interface AddExpensePopoverProps {
-    heightClass?: string;
     month?: number;
     year?: number;
 }
 
-export default function AddExpensePopover({heightClass, month, year}: AddExpensePopoverProps) {
+export default function AddExpensePopover({month, year}: AddExpensePopoverProps) {
     const {colorScheme} = useMantineColorScheme();
-    const height = heightClass ? heightClass : `h-[48px]`;
     return (
-        <>
-            <div className={"flex"}>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <button
-                            type="button"
-                            aria-label="Add expense"
-                            className={`${height} + w-[50px] hover:shadow hover:bg-blue-400 rounded-l-2xl  p-3 bg-blue-500 font-semibold text-white`}
-                        >
-                            New
-
-                        </button>
-
-                    </PopoverTrigger>
-                    <PopoverContent
-                        className={`${colorScheme == 'dark' ? "bg-black border-gray-700 shadow-2xl" : ""} `}
-                    >
-                        <AddExpenseForm month={month} year={year}/>
-                    </PopoverContent>
-                </Popover>
-
-
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <button
-                            type="button"
-                            aria-label="Open quick expense actions"
-                            className={`${height} + hover:shadow w-[30px]  pl-1 rounded-r-2xl bg-blue-500 hover:bg-blue-400 text-white pt-3.5`}
-                        >
-                            <IconChevronDown
-                                size={20}
-                            />
-                        </button>
-                    </PopoverTrigger>
-                    <PopoverContent>
-
-                        <CustomButtons/>
-
-                    </PopoverContent>
-
-                </Popover>
-            </div>
-        </>
+        <Popover>
+            <PopoverTrigger asChild>
+                <ExpenseAddButton/>
+            </PopoverTrigger>
+            <PopoverContent className={colorScheme === "dark" ? "border-border bg-popover text-popover-foreground shadow-2xl" : ""}>
+                <AddExpenseForm month={month} year={year}/>
+            </PopoverContent>
+        </Popover>
     )
 }
 
