@@ -10,7 +10,7 @@ const features = [
 
 export default function LandingPage() {
     return (
-        <div className="min-h-full bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+        <div className="min-h-full bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-6 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/40">
             <div className="mx-auto grid max-w-6xl items-center gap-12 py-8 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">
                 <div>
                     <Badge size="lg" variant="light" leftSection={<IconPigMoney size={14}/>}>Simple personal finance</Badge>
@@ -32,6 +32,10 @@ export default function LandingPage() {
                 </div>
                 <LoginMantine/>
             </div>
+            <footer className="mx-auto flex max-w-6xl flex-col gap-2 border-t py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+                <span>Designed for a calmer relationship with money.</span>
+                <a className="font-semibold hover:text-emerald-700" href="https://github.com/Shamitbh/budget-tracker" target="_blank" rel="noreferrer">View the project on GitHub</a>
+            </footer>
         </div>
     );
 }
