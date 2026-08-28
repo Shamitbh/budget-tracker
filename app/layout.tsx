@@ -81,6 +81,13 @@ export default function RootLayout({
                             />
                             <div className={"flex relative overflow-hidden h-[calc(100%-3.5rem)]"}>
                                 <NavBar collapsed={collapsed}/>
+                                {!collapsed && (
+                                    <button
+                                        aria-label="Close navigation"
+                                        className="absolute inset-0 z-20 bg-slate-950/40 backdrop-blur-[1px] md:hidden"
+                                        onClick={() => setCollapsed(true)}
+                                    />
+                                )}
                                 <main
                                     className={`flex-1 overflow-y-auto ${colorScheme === 'dark' ? "bg-slate-900" : "bg-white"}`}
                                 >
