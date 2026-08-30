@@ -6,6 +6,15 @@ export function ExpenseTableFrame({children}: {children: React.ReactNode}) {
     return <div className="overflow-hidden rounded-xl border bg-card shadow-sm">{children}</div>;
 }
 
+export function ExpenseSectionHeader({title, action}: {title: string; action: React.ReactNode}) {
+    return (
+        <div className="mb-4 flex min-h-10 items-center justify-between gap-4">
+            <h2 className="text-2xl font-medium tracking-tight text-foreground">{title}</h2>
+            {action}
+        </div>
+    );
+}
+
 export function ExpenseTableEmptyState({colSpan, monthly = false}: {colSpan: number; monthly?: boolean}) {
     return (
         <TableRow className="hover:bg-transparent">

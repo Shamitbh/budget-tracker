@@ -6,7 +6,7 @@ import {Input} from "@/components/ui/input"
 import {CategoryPicker} from "@/components/CategoryPicker";
 import {IconPlus} from "@tabler/icons-react";
 import ExpenseAddButton from "@/components/ExpenseAddButton";
-import {ExpenseSortButton, ExpenseTableEmptyState, ExpenseTableFrame, expenseTableHeaderClass, expenseTableRowClass} from "@/components/ExpenseTablePrimitives";
+import {ExpenseSectionHeader, ExpenseSortButton, ExpenseTableEmptyState, ExpenseTableFrame, expenseTableHeaderClass, expenseTableRowClass} from "@/components/ExpenseTablePrimitives";
 import {formatCurrency} from "@/lib/utils";
 import {ChangeEvent, MutableRefObject, useEffect, useMemo, useRef, useState} from "react";
 import {addOrUpdateExpense, deactivateRecurringExpense, useExpenses} from "@/lib/firebase";
@@ -26,7 +26,6 @@ interface MonthlyExpensesProps {
 type MonthlySortKey = "name" | "categoryID" | "amount";
 
 export default function MonthlyExpenses({width = "w-full", height = "h-full", month, year}: MonthlyExpensesProps) {
-    const {colorScheme} = useMantineTheme();
     const initialExpenseRow = {
         name: "",
         category: "",
@@ -178,22 +177,14 @@ export default function MonthlyExpenses({width = "w-full", height = "h-full", mo
 
     return (
         <div className={`${width} ${height}`}>
-            <div className={"flex justify-between items-center mb-5 mt-5"}>
-                <div className={"flex-grow "}>
-                    <div className={"text-2xl font-medium"}>
-                        <div className={`${colorScheme == 'dark' ? "text-white" : ""}`}>
-                            Monthly Expenses
-
-                        </div>
-                    </div>
-                </div>
-
-                <ExpenseAddButton
+            <ExpenseSectionHeader
+                title="Monthly Expenses"
+                action={<ExpenseAddButton
                     label={showForm ? "Close monthly expense form" : "Add monthly expense"}
                     aria-expanded={showForm}
                     onClick={toggleForm}
-                />
-            </div>
+                />}
+            />
             <ExpenseTableFrame>
             <Table>
 

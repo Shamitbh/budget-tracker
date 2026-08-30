@@ -13,8 +13,16 @@ Columns are where you define the core of what your table will look like. They de
 export const columns: ColumnDef<Expense>[] = [
     {
         accessorKey: "name",
-        header: () => {
-            return <div className="text-left">Name</div>;
+        header: ({column}) => {
+            return <ExpenseSortButton label="Name" direction={column.getIsSorted()} onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}/>;
+        },
+    },
+    {
+        accessorKey: "categoryID",
+        header: ({column}) => {
+            return (
+                <ExpenseSortButton label="Category" direction={column.getIsSorted()} onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}/>
+            )
         },
     },
     {
@@ -29,14 +37,6 @@ export const columns: ColumnDef<Expense>[] = [
             return <div className="text-right font-semibold tabular-nums">{formatCurrency(amount)}</div>
 
         }
-    },
-    {
-        accessorKey: "categoryID",
-        header: ({column}) => {
-            return (
-                <ExpenseSortButton label="Category" direction={column.getIsSorted()} onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}/>
-            )
-        },
     },
     {
         accessorKey: "date",

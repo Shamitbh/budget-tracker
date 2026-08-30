@@ -2,7 +2,7 @@
 import {DataTable} from "./data-table"
 import {columns} from "./columns";
 import {IconArrowBigLeft, IconArrowBigRight} from "@tabler/icons-react";
-import {Button, Tabs, useMantineTheme} from "@mantine/core";
+import {Button, Tabs} from "@mantine/core";
 import {useExpenses} from "@/lib/firebase";
 import {useAuth} from "@/app/context";
 import {DateData, Expense} from "@/lib/Interfaces";
@@ -13,6 +13,7 @@ import MonthlyExpenses from "@/components/MonthlyExpenses";
 import AddExpensePopover from "@/components/AddExpensePopover";
 import {getCurrentDate} from "@/lib/utils";
 import PageHeader from "@/components/PageHeader";
+import {ExpenseSectionHeader} from "@/components/ExpenseTablePrimitives";
 
 export default function Page() {
 
@@ -27,7 +28,6 @@ export default function Page() {
     const now = new Date();
     const isCurrentMonth = currentDate.month === now.getMonth() + 1 && currentDate.year === now.getFullYear();
 
-    const {colorScheme} = useMantineTheme();
     if (loading) return <LoadingTable/>
     if (!user) return <LoginMantine/>
     return (
@@ -36,7 +36,6 @@ export default function Page() {
                 eyebrow="Expenses"
                 title={`${currentDate.monthName} ${currentDate.year}`}
                 description="Review transactions and understand where your money went."
-                actions={<AddExpensePopover month={currentDate.month} year={currentDate.year}/>}
             />
             <div className={"flex flex-row justify-between mb-6 mt-1"}>
                 <div className={"flex flex-row gap-1"}>
@@ -98,14 +97,10 @@ export default function Page() {
                 </Tabs.List>
                 <Tabs.Panel value={"expenses"} pt={"xs"}>
 
-                    <div className="flex justify-between">
-
-                        <div className={`text-2xl font-medium m-2 ${colorScheme == "dark" ? "text-white" : ""}`}>
-                            All Expenses
-                        </div>
-                        <div/>
-
-                    </div>
+                    <ExpenseSectionHeader
+                        title="All Expenses"
+                        action={<AddExpensePopover month={currentDate.month} year={currentDate.year}/>}
+                    />
 
 
                     <div className={""}>
