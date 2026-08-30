@@ -5,6 +5,7 @@ import {Expense} from "@/lib/Interfaces";
 import {useAuth} from "@/app/context";
 import {useExpenses} from "@/lib/firebase";
 import AddExpensePopover from "@/components/AddExpensePopover";
+import {ExpenseSectionHeader} from "@/components/ExpenseTablePrimitives";
 import {Button, rem} from "@mantine/core";
 import ComponentFrameCenter from "@/components/layouts/ComponentFrameCenter";
 import {ColumnDef} from "@tanstack/react-table";
@@ -128,13 +129,7 @@ export default function MiniExpenses() {
 
             >
 
-                <div className="mb-4 flex items-center justify-between">
-                    <div className={"text-2xl"}>
-                        All Expenses
-                    </div>
-                    <AddExpensePopover/>
-
-                </div>
+                <ExpenseSectionHeader title="All Expenses" action={<AddExpensePopover/>}/>
                 <DataTable columns={columns} data={expenses}/>
             </ComponentFrameCenter>
         </>
